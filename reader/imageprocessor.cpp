@@ -69,7 +69,7 @@ cv::Mat ImageProcessor::cropSquare(cv::Mat thresh)
         std::cerr << "Error: couldn't find a suitable square" << std::endl;
         return cv::Mat();
     }
-};
+}
 
 cv::Mat ImageProcessor::deskewImage(const cv::Mat &cropped)
 {

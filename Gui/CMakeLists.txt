@@ -1,14 +1,17 @@
-qt_standard_project_setup()
-
-qt_add_executable(sudokuapp
+add_executable(SudokuApp
     main.cpp
-    # lisää myöhemmin .cpp/.h/.ui tiedostoja
+    cell.cpp
+    grid.cpp
 )
 
-target_link_libraries(sudokuapp PRIVATE
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Widgets
-    sudokusolver
-    sudokureader
+target_include_directories(SudokuApp
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(SudokuApp
+    PRIVATE
+        Qt6::Widgets
+        solver
+        reader
 )

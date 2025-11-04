@@ -1,12 +1,11 @@
 find_package(OpenCV REQUIRED)
+# find_package(Tesseract REQUIRED)
+include_directories(/usr/include/tesseract ${OpenCV_INCLUDE_DIRS} )
 
-add_library(sudoku_reader
-    reader.cpp
-    reader.h
+add_library(reader
+    imageprocessor.cpp
+    sudokureader.cpp
 )
 
-target_include_directories(sudoku_reader PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
 
-target_link_libraries(sudoku_reader PUBLIC ${OpenCV_LIBS})
+target_include_directories(reader PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
