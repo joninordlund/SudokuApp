@@ -33,7 +33,6 @@ std::vector<std::vector<int>> Grid::toMatrix()
     {
         matrix[cell->row()][cell->col()] = cell->digit();
     }
-
     return matrix;
 }
 
@@ -114,7 +113,6 @@ void Grid::keyPressEvent(QKeyEvent *event)
         for (Cell *cell : m_selected)
         {
             cell->setDigit(key - Qt::Key_0);
-            // cell->update();
         }
         return;
     }

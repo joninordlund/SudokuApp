@@ -4,14 +4,13 @@
 #include <cassert>
 #include <unordered_set>
 
-vector<int> DLXBuilder::findSolution()
+vector<vector<int>> DLXBuilder::findSolutions()
 {
     build();
     search(0);
     std::cout << "Sol size: " << solutionSize << endl;
-    solution.resize(solutionSize);
-    validateSolutionDebug();
-    return solution;
+
+    return allSolutions;
 }
 
 void DLXBuilder::build()
@@ -198,15 +197,12 @@ void DLXBuilder::unhide(int p)
 
 void DLXBuilder::search(int x)
 {
-    if (solutionFound)
-    {
-        return;
-    }
+    int maxSolutions = 100;
     if (nodes[0].right == 0)
     {
-        solutionFound = true;
-        solutionSize = x;
-        std::cout << "\nSolution found! " << x << " rows: \n";
+        std::vector<int> currentSolution(solution.begin(), solution.begin() + x);
+        allSolutions.push_back(currentSolution);
+        std::cout << "Solution #" << allSolutions.size() << " found\n";
         return;
     }
 
@@ -220,33 +216,34 @@ void DLXBuilder::search(int x)
         int j = r + 1;
         while (j != r)
         {
-            if (nodes[j].top < 0)
+            if (nodes[j].top < 0) // spacer
             {
                 j = nodes[j].up;
                 continue;
             }
-
             cover(nodes[j].top);
             j++;
         }
+
         search(x + 1);
-        // Backtrack
+
         int t = r - 1;
         while (t != r)
         {
-            if (nodes[t].top < 0)
+            if (nodes[t].top < 0) // spacer
             {
                 t = nodes[t].down;
                 continue;
             }
-
             uncover(nodes[t].top);
             t--;
         }
+
         r = nodes[r].down;
-        if (solutionFound)
+
+        if (allSolutions.size() >= maxSolutions)
         {
-            return;
+            break;
         }
     }
     uncover(col);
@@ -258,82 +255,13 @@ int DLXBuilder::chooseCol()
     int best = -1;
     int bestLen = numeric_limits<int>::max();
 
-    for (int c = nodes[0].right; c != 0; c = nodes[c].right)
+    for (int col = nodes[0].right; col != 0; col = nodes[col].right)
     {
-        if (nodes[c].len < bestLen)
+        if (nodes[col].len < bestLen)
         {
-            bestLen = nodes[c].len;
-            best = c;
+            bestLen = nodes[col].len;
+            best = col;
         }
     }
     return best;
-}
-
-bool DLXBuilder::validateSolutionDebug()
-{
-    if (!solutionFound)
-    {
-        std::cout << "No solution.\n";
-        return false;
-    }
-
-    int cols = matrix[0].size();
-    std::vector<int> coverage(cols, 0);
-    std::vector<std::vector<int>> byRow(cols);
-    std::sort(solution.begin(), solution.end());
-    for (int i = 0; i < solutionSize; i++)
-    {
-        int rowIdx = solution[i];
-        if (rowIdx < 0 || rowIdx >= (int)matrix.size())
-        {
-            std::cout << "Virhe: solution sisältää rivin " << rowIdx << "\n";
-            return false;
-        }
-
-        const auto &row = matrix[rowIdx];
-        for (int j = 0; j < cols; j++)
-        {
-            if (row[j] > 0)
-            {
-                coverage[j]++;
-                byRow[j].push_back(rowIdx);
-            }
-        }
-    }
-
-    bool ok = true;
-    for (int j = 0; j < cols; j++)
-    {
-        if (coverage[j] != 1)
-        {
-            ok = false;
-            if (coverage[j] == 0)
-            {
-                std::cout << "❌ Sarake " << j + 1
-                          //   << " (" << constraintName(j)
-                          << ") jäi kattamatta!\n";
-            }
-            else
-            {
-                std::cout << "❌ Sarake " << j + 1
-                          //   << " (" << constraintName(j)
-                          << " peitetty " << coverage[j] << " kertaa.\n";
-                std::cout << "   Mukana rivit: ";
-                for (int r : byRow[j])
-                    std::cout << r << " ";
-                std::cout << "\n";
-            }
-        }
-    }
-
-    if (ok)
-    {
-        std::cout << "✅ Sudoku-ratkaisu on validi exact cover!\n";
-    }
-    else
-    {
-        std::cout << "❌ Sudoku-ratkaisussa on ongelmia.\n";
-    }
-
-    return ok;
 }

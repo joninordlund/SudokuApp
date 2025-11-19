@@ -35,7 +35,7 @@ public:
     int N, M;
     bool solutionFound;
     int solutionSize;
-    std::vector<std::vector<int>> allSolutions;
+    vector<vector<int>> allSolutions;
 
     void build();
     void search(int x);
@@ -52,6 +52,5 @@ public:
         N = matrix[0].size();
         solution.resize(M);
     };
-    vector<int> findSolution();
-    bool validateSolutionDebug();
+    vector<vector<int>> findSolutions();
 };

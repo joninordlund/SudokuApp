@@ -2,14 +2,14 @@
 #include <vector>
 #include <iostream>
 
-std::pair<Matrix, std::vector<Cell>> SudokuSolver::makeSudokuMatrix(const Matrix &sudoku)
+std::pair<Matrix, std::vector<std::tuple<int, int, int>>> SudokuSolver::makeSudokuMatrix(const Matrix &sudoku)
 {
     const int M = 9;
 
     Matrix mat;
     mat.reserve(M * M * M);
 
-    std::vector<Cell> rowMapping;
+    std::vector<std::tuple<int, int, int>> rowMapping;
 
     for (int i = 0; i < M; i++)
     {
