@@ -2,7 +2,6 @@ add_executable(SudokuApp
     main.cpp
     cell.cpp
     grid.cpp
-    util.cpp
 )
 
 target_include_directories(SudokuApp

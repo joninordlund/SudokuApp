@@ -2,14 +2,15 @@
 
 #include <vector>
 
-using Matrix = std::vector<std::vector<int>>;
-// using Cewll = std::tuple<int, int, int>;
+using namespace std;
+using Matrix = vector<vector<int>>;
 
-// Sudokupohja:
-// https://sudokupad.app/yttrio/sightline-sum-whisper-loop
 class SudokuSolver
 {
 public:
     SudokuSolver() {}
-    std::pair<Matrix, std::vector<std::tuple<int, int, int>>> makeSudokuMatrix(const Matrix &sudoku);
+    vector<Matrix> getSolutions(const Matrix &grid);
+
+private:
+    pair<Matrix, vector<tuple<int, int, int>>> makeSudokuMatrix(const Matrix &sudoku);
 };

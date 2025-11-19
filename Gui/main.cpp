@@ -4,7 +4,7 @@
 #include <QFrame>
 
 #include "grid.h"
-#include "util.h"
+#include "sudokusolver.h"
 
 const std::vector<std::vector<int>> sudoku{
     {0, 0, 0, 2, 0, 5, 0, 0, 0},
@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
     QFrame *frame = new QFrame;
     frame->setFrameStyle(QFrame::Box);
     frame->setLineWidth(3);
-
-    auto sols = Util::convertSolutions(sudoku);
+    SudokuSolver solver;
+    auto sols = solver.getSolutions(sudoku);
 
     Grid *grid = new Grid(sols[0], frame);
     QHBoxLayout *frameLayout = new QHBoxLayout(frame);

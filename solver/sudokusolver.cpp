@@ -1,15 +1,17 @@
-#include "sudokusolver.h"
 #include <vector>
 #include <iostream>
 
-std::pair<Matrix, std::vector<std::tuple<int, int, int>>> SudokuSolver::makeSudokuMatrix(const Matrix &sudoku)
+#include "sudokusolver.h"
+#include "DLXBuilder.h"
+
+pair<Matrix, vector<tuple<int, int, int>>> SudokuSolver::makeSudokuMatrix(const Matrix &sudoku)
 {
     const int M = 9;
 
     Matrix mat;
     mat.reserve(M * M * M);
 
-    std::vector<std::tuple<int, int, int>> rowMapping;
+    vector<tuple<int, int, int>> rowMapping;
 
     for (int i = 0; i < M; i++)
     {
@@ -17,7 +19,7 @@ std::pair<Matrix, std::vector<std::tuple<int, int, int>>> SudokuSolver::makeSudo
         {
             for (int n = 1; n <= M; n++)
             {
-                std::vector<int> row;
+                vector<int> row;
                 row.resize(4 * M * M);
                 if (sudoku[i][j] == 0 || sudoku[i][j] == n)
                 {
@@ -34,6 +36,26 @@ std::pair<Matrix, std::vector<std::tuple<int, int, int>>> SudokuSolver::makeSudo
             }
         }
     }
-    auto res = std::make_pair(mat, rowMapping);
+    auto res = make_pair(mat, rowMapping);
+    return res;
+}
+
+vector<Matrix> SudokuSolver::getSolutions(const Matrix &sudoku)
+{
+    pair<Matrix, vector<tuple<int, int, int>>> sudokuMat = makeSudokuMatrix(sudoku);
+    DLXBuilder dlx(sudokuMat.first);
+    auto solutions = dlx.findSolutions();
+
+    Matrix solved(9, vector<int>(9, 0));
+    vector<Matrix> res;
+    for (int r = 0; r < solutions.size(); r++)
+    {
+        for (int rowID : solutions[r])
+        {
+            auto [i, j, n] = sudokuMat.second[rowID - 1];
+            solved[i][j] = n;
+        }
+        res.push_back(solved);
+    }
     return res;
 }

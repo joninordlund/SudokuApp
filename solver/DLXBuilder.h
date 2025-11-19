@@ -28,6 +28,15 @@ struct Node
 class DLXBuilder
 {
 public:
+    DLXBuilder(Matrix mat) : matrix(mat), solutionFound(false), solutionSize(0)
+    {
+        M = matrix.size();
+        N = matrix[0].size();
+        solution.resize(M);
+    };
+    vector<vector<int>> findSolutions();
+
+private:
     vector<Node> nodes;
     Matrix matrix;
     vector<int> lenVec;
@@ -44,13 +53,4 @@ public:
     void hide(int i);
     void unhide(int i);
     int chooseCol();
-
-public:
-    DLXBuilder(Matrix mat) : matrix(mat), solutionFound(false), solutionSize(0)
-    {
-        M = matrix.size();
-        N = matrix[0].size();
-        solution.resize(M);
-    };
-    vector<vector<int>> findSolutions();
 };
