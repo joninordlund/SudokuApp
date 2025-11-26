@@ -8,11 +8,13 @@ class Cell : public QWidget
     Q_OBJECT
 public:
     Cell(int row, int col, Grid *owner, QWidget *parent = nullptr);
-    void setDigit(int digit);
+    void setDigit(int digit, bool isGiven);
     void setSelected(bool sel);
     void setCursor(bool cursor);
+    void setGiven(bool given);
 
     bool isCursor() { return m_isCursor; }
+    bool isGiven() { return m_isGiven; }
 
     int row() const { return m_row; }
     int col() const { return m_col; }

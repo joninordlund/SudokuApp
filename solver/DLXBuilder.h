@@ -28,23 +28,21 @@ struct Node
 class DLXBuilder
 {
 public:
-    DLXBuilder(Matrix mat) : matrix(mat), solutionFound(false), solutionSize(0)
+    DLXBuilder(Matrix mat) : m_matrix(mat)
     {
-        M = matrix.size();
-        N = matrix[0].size();
-        solution.resize(M);
+        M = m_matrix.size();
+        N = m_matrix[0].size();
+        m_solution.resize(M);
     };
     vector<vector<int>> findSolutions();
 
 private:
-    vector<Node> nodes;
-    Matrix matrix;
+    vector<Node> m_nodes;
+    Matrix m_matrix;
     vector<int> lenVec;
-    vector<int> solution;
+    vector<int> m_solution;
     int N, M;
-    bool solutionFound;
-    int solutionSize;
-    vector<vector<int>> allSolutions;
+    vector<vector<int>> m_allSolutions;
 
     void build();
     void search(int x);

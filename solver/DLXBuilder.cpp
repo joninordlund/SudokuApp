@@ -8,15 +8,14 @@ vector<vector<int>> DLXBuilder::findSolutions()
 {
     build();
     search(0);
-    std::cout << "Sol size: " << solutionSize << endl;
 
-    return allSolutions;
+    return m_allSolutions;
 }
 
 void DLXBuilder::build()
 {
-    int M = matrix.size();
-    int N = matrix[0].size();
+    int M = m_matrix.size();
+    int N = m_matrix[0].size();
     lenVec.resize(N);
 
     // To simplify the handling, replace 1's in the matrix by
@@ -26,9 +25,9 @@ void DLXBuilder::build()
     {
         for (int j = 0; j < N; j++)
         {
-            if (matrix[i][j] > 0)
+            if (m_matrix[i][j] > 0)
             {
-                matrix[i][j] = idx++;
+                m_matrix[i][j] = idx++;
                 lenVec[j]++;
             }
         }
@@ -41,20 +40,20 @@ void DLXBuilder::build()
     {
         head.push_back(i);
     }
-    matrix.insert(matrix.begin(), head);
+    m_matrix.insert(m_matrix.begin(), head);
 
     int maxSize = N * M + N + (N + 1); // matrix + header + spacers
-    nodes.clear();
-    nodes.resize(maxSize);
+    m_nodes.clear();
+    m_nodes.resize(maxSize);
 
     // set uo the root node
-    nodes[0].up = -1;
-    nodes[0].down = -1;
-    nodes[0].left = N;
-    nodes[0].right = 1;
-    nodes[0].top = 0;
-    nodes[0].row = 0;
-    nodes[0].len = -1;
+    m_nodes[0].up = -1;
+    m_nodes[0].down = -1;
+    m_nodes[0].left = N;
+    m_nodes[0].right = 1;
+    m_nodes[0].top = 0;
+    m_nodes[0].row = 0;
+    m_nodes[0].len = -1;
 
     auto posMod = [](int a, int b)
     {
@@ -67,24 +66,24 @@ void DLXBuilder::build()
     {
         for (int j = 0; j < N; j++)
         {
-            if (matrix[i][j] > 0)
+            if (m_matrix[i][j] > 0)
             {
                 int f = posMod(i - 1, M + 1);
                 while (true)
                 {
-                    if (matrix[f][j] > 0)
+                    if (m_matrix[f][j] > 0)
                         break;
                     f = posMod(f - 1, M + 1);
                 }
-                int up = matrix[f][j];
+                int up = m_matrix[f][j];
                 f = posMod(i + 1, M + 1);
                 while (true)
                 {
-                    if (matrix[f][j] > 0)
+                    if (m_matrix[f][j] > 0)
                         break;
                     f = posMod(f + 1, M + 1);
                 }
-                int down = matrix[f][j];
+                int down = m_matrix[f][j];
                 Node node;
                 node.up = up;
                 node.down = down;
@@ -102,22 +101,22 @@ void DLXBuilder::build()
                 {
                     node.len = -1;
                 }
-                nodes[matrix[i][j]] = node;
+                m_nodes[m_matrix[i][j]] = node;
                 nodeCount++;
             }
         }
     }
-    nodes.resize(nodeCount + M + 2);
+    m_nodes.resize(nodeCount + M + 2);
     // set the spacers
     int prev = -1;
-    for (int i = N + 1; i < nodes.size(); i++)
+    for (int i = N + 1; i < m_nodes.size(); i++)
     {
-        if (nodes[i].top < 0)
+        if (m_nodes[i].top < 0)
         {
             if (prev >= 0)
             {
-                nodes[i].up = prev + 1;
-                nodes[prev].down = i - 1;
+                m_nodes[i].up = prev + 1;
+                m_nodes[prev].down = i - 1;
             }
             prev = i;
         }
@@ -126,16 +125,16 @@ void DLXBuilder::build()
 
 void DLXBuilder::cover(int col)
 {
-    int left = nodes[col].left;
-    int right = nodes[col].right;
-    nodes[right].left = left;
-    nodes[left].right = right;
+    int left = m_nodes[col].left;
+    int right = m_nodes[col].right;
+    m_nodes[right].left = left;
+    m_nodes[left].right = right;
 
-    int p = nodes[col].down;
+    int p = m_nodes[col].down;
     while (p != col)
     {
         hide(p);
-        p = nodes[p].down;
+        p = m_nodes[p].down;
     }
 }
 
@@ -144,34 +143,34 @@ void DLXBuilder::hide(int p)
     int q = p + 1;
     while (q != p)
     {
-        int x = nodes[q].top;
+        int x = m_nodes[q].top;
         if (x < 0) // q is a spacer
         {
-            q = nodes[q].up;
+            q = m_nodes[q].up;
             continue;
         }
-        int up = nodes[q].up;
-        int down = nodes[q].down;
+        int up = m_nodes[q].up;
+        int down = m_nodes[q].down;
 
-        nodes[up].down = down;
-        nodes[down].up = up;
-        nodes[x].len = nodes[x].len - 1;
+        m_nodes[up].down = down;
+        m_nodes[down].up = up;
+        m_nodes[x].len = m_nodes[x].len - 1;
         q++;
     }
 }
 
 void DLXBuilder::uncover(int col)
 {
-    int p = nodes[col].up;
+    int p = m_nodes[col].up;
     while (p != col)
     {
         unhide(p);
-        p = nodes[p].up;
+        p = m_nodes[p].up;
     }
-    int left = nodes[col].left;
-    int right = nodes[col].right;
-    nodes[left].right = col;
-    nodes[right].left = col;
+    int left = m_nodes[col].left;
+    int right = m_nodes[col].right;
+    m_nodes[left].right = col;
+    m_nodes[right].left = col;
 }
 
 void DLXBuilder::unhide(int p)
@@ -179,18 +178,18 @@ void DLXBuilder::unhide(int p)
     int q = p - 1;
     while (q != p)
     {
-        int x = nodes[q].top;
+        int x = m_nodes[q].top;
         if (x < 0) // q is a spacer
         {
-            q = nodes[q].down;
+            q = m_nodes[q].down;
             continue;
         }
-        int up = nodes[q].up;
-        int down = nodes[q].down;
+        int up = m_nodes[q].up;
+        int down = m_nodes[q].down;
 
-        nodes[up].down = q;
-        nodes[down].up = q;
-        nodes[x].len = nodes[x].len + 1;
+        m_nodes[up].down = q;
+        m_nodes[down].up = q;
+        m_nodes[x].len = m_nodes[x].len + 1;
         q--;
     }
 }
@@ -198,30 +197,29 @@ void DLXBuilder::unhide(int p)
 void DLXBuilder::search(int x)
 {
     int maxSolutions = 100;
-    if (nodes[0].right == 0)
+    if (m_nodes[0].right == 0)
     {
-        std::vector<int> currentSolution(solution.begin(), solution.begin() + x);
-        allSolutions.push_back(currentSolution);
-        std::cout << "Solution #" << allSolutions.size() << " found\n";
+        std::vector<int> currentSolution(m_solution.begin(), m_solution.begin() + x);
+        m_allSolutions.push_back(currentSolution);
         return;
     }
 
     int col = chooseCol();
     cover(col);
 
-    int r = nodes[col].down;
+    int r = m_nodes[col].down;
     while (r != col)
     {
-        solution[x] = nodes[r].row;
+        m_solution[x] = m_nodes[r].row;
         int j = r + 1;
         while (j != r)
         {
-            if (nodes[j].top < 0) // spacer
+            if (m_nodes[j].top < 0) // spacer
             {
-                j = nodes[j].up;
+                j = m_nodes[j].up;
                 continue;
             }
-            cover(nodes[j].top);
+            cover(m_nodes[j].top);
             j++;
         }
 
@@ -230,18 +228,18 @@ void DLXBuilder::search(int x)
         int t = r - 1;
         while (t != r)
         {
-            if (nodes[t].top < 0) // spacer
+            if (m_nodes[t].top < 0) // spacer
             {
-                t = nodes[t].down;
+                t = m_nodes[t].down;
                 continue;
             }
-            uncover(nodes[t].top);
+            uncover(m_nodes[t].top);
             t--;
         }
 
-        r = nodes[r].down;
+        r = m_nodes[r].down;
 
-        if (allSolutions.size() >= maxSolutions)
+        if (m_allSolutions.size() >= maxSolutions)
         {
             break;
         }
@@ -255,11 +253,11 @@ int DLXBuilder::chooseCol()
     int best = -1;
     int bestLen = numeric_limits<int>::max();
 
-    for (int col = nodes[0].right; col != 0; col = nodes[col].right)
+    for (int col = m_nodes[0].right; col != 0; col = m_nodes[col].right)
     {
-        if (nodes[col].len < bestLen)
+        if (m_nodes[col].len < bestLen)
         {
-            bestLen = nodes[col].len;
+            bestLen = m_nodes[col].len;
             best = col;
         }
     }

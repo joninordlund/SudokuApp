@@ -1,4 +1,6 @@
 #include "grid.h"
+#include "sudokusolver.h"
+
 #include <QGridLayout>
 #include <QPainter>
 #include <QFrame>
@@ -7,11 +9,12 @@
 Grid::Grid(const std::vector<std::vector<int>> &matrix, QWidget *parent) : QWidget(parent),
                                                                            m_cells(81),
                                                                            m_lastSelectedCell(nullptr),
-                                                                           m_isDragging(false)
+                                                                           m_isDragging(false),
+                                                                            m_dirty(false)
 {
     QGridLayout *layout = new QGridLayout(this);
     layout->setSpacing(0);
-    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(8, 8, 8, 8);
 
     for (int i = 0; i < 81; i++)
     {
@@ -20,7 +23,8 @@ Grid::Grid(const std::vector<std::vector<int>> &matrix, QWidget *parent) : QWidg
         m_cells[i] = new Cell(row, col, this, this);
         layout->addWidget(m_cells[i], row, col);
     }
-    fromMatrix(matrix);
+    fromMatrix(matrix, false);
+    m_currentSudoku = toMatrix();
     // setFocusPolicy(Qt::StrongFocus);
     grabKeyboard();
 }
@@ -36,11 +40,12 @@ std::vector<std::vector<int>> Grid::toMatrix()
     return matrix;
 }
 
-void Grid::fromMatrix(const std::vector<std::vector<int>> &matrix)
+void Grid::fromMatrix(const std::vector<std::vector<int>> &matrix, bool isSolution)
 {
     for (Cell *cell : m_cells)
     {
-        cell->setDigit(matrix[cell->row()][cell->col()]);
+        bool isGiven = matrix[cell->row()][cell->col()] > 0 ? true : false;
+        cell->setDigit(matrix[cell->row()][cell->col()], isGiven);
     }
 }
 
@@ -62,7 +67,7 @@ void Grid::handleMousePress(Cell *cell, bool ctrl)
     }
     else
     {
-        for (Cell *cell : m_selected)
+        for (Cell *cell : std::as_const(m_selected))
         {
             cell->setSelected(false);
         }
@@ -110,27 +115,31 @@ void Grid::keyPressEvent(QKeyEvent *event)
 
     if (key - Qt::Key_0 >= 1 && key - Qt::Key_0 <= 9)
     {
-        for (Cell *cell : m_selected)
+        for (Cell *cell : std::as_const(m_selected))
         {
-            cell->setDigit(key - Qt::Key_0);
+            if(!cell->isGiven() || m_editMode == EDIT_CLUES)
+            {
+                cell->setDigit(key - Qt::Key_0, m_editMode == EDIT_CLUES);
+                m_dirty = m_editMode == EDIT_CLUES ? true : false;
+            }
         }
         return;
     }
     if (key == Qt::Key_Escape)
     {
-        for (Cell *cell : m_selected)
+        for (Cell *cell : std::as_const(m_selected))
         {
             cell->setSelected(false);
             cell->setCursor(false);
         }
-        m_lastSelectedCell == nullptr;
+        m_lastSelectedCell = nullptr;
         return;
     }
     if (key == Qt::Key_Delete || key == Qt::Key_Backspace)
     {
         if (m_lastSelectedCell)
         {
-            m_lastSelectedCell->setDigit(0);
+            m_lastSelectedCell->setDigit(0, m_editMode == EDIT_CLUES);
             m_lastSelectedCell->clearCornerMarks();
             m_lastSelectedCell->clearCenterMarks();
         }
@@ -169,7 +178,7 @@ void Grid::keyPressEvent(QKeyEvent *event)
         }
         else
         {
-            for (Cell *cell : m_selected)
+            for (Cell *cell : std::as_const(m_selected))
             {
                 cell->setSelected(false);
             }
@@ -182,4 +191,19 @@ void Grid::keyPressEvent(QKeyEvent *event)
         m_lastSelectedCell = nextCell;
         m_lastSelectedCell->setCursor(true);
     }
+}
+
+void Grid::onShowSolution()
+{
+    SudokuSolver solver;
+    auto sols = solver.getSolutions(m_currentSudoku);
+    qDebug() << "Solvaa mua!";
+    fromMatrix(sols[0], true);
+    update();
+}
+
+void Grid::onHideSolution()
+{
+    fromMatrix(m_currentSudoku, false);
+    update();
 }
