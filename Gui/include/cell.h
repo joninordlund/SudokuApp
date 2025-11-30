@@ -1,32 +1,29 @@
 #pragma once
 #include <QWidget>
-// #include "grid.h"
-class Grid;
 
 class Cell : public QWidget
 {
     Q_OBJECT
-public:
-    Cell(int row, int col, Grid *owner, QWidget *parent = nullptr);
+  public:
+    Cell(int row, int col, QWidget* parent = nullptr);
     void setDigit(int digit, bool isGiven);
     void setSelected(bool sel);
     void setCursor(bool cursor);
     void setGiven(bool given);
 
-    bool isCursor() { return m_isCursor; }
-    bool isGiven() { return m_isGiven; }
-
+    bool isCursor() const { return m_isCursor; }
+    bool isGiven() const { return m_isGiven; }
     int row() const { return m_row; }
     int col() const { return m_col; }
     int digit() const { return m_digit; }
     void clearCornerMarks() { m_cornerMarks.clear(); }
     void clearCenterMarks() { m_centerMarks.clear(); }
 
-protected:
-    void mousePressEvent(QMouseEvent *event);
-    void paintEvent(QPaintEvent *event);
+  protected:
+    void mousePressEvent(QMouseEvent* event);
+    void paintEvent(QPaintEvent* event);
 
-private:
+  private:
     int m_digit;
     QSet<int> m_cornerMarks;
     QSet<int> m_centerMarks;

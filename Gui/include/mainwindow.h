@@ -9,20 +9,19 @@
 class MainWindow : public QWidget
 {
     Q_OBJECT
-public:
+  public:
     explicit MainWindow(QWidget *parent = nullptr);
 
-private slots:
-    void onEditModeChanged(bool checked);
+  private slots:
+    // void onEditModeChanged(bool checked);
 
-private:
+  private:
     void setupUI();
 
     QPushButton *m_solveBtn;
     QPushButton *m_showSolBtn;
-
+    QPushButton* m_clearBtn;
+    QPushButton* m_randomBtn;
     ToggleSwitch* m_editModeToggle;
-    Grid *m_grid;
+    Grid* m_grid;
 };
-
-

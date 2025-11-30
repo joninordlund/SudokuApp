@@ -1,17 +1,15 @@
 #include "cell.h"
-#include "grid.h"
 #include <QPainter>
 #include <QMouseEvent>
 
-Cell::Cell(int row, int col, Grid *owner, QWidget *parent) : QWidget(parent),
+Cell::Cell(int row, int col, QWidget* parent) :
+    QWidget(parent),
     m_row(row),
     m_col(col),
     m_isSelected(false),
     m_isCursor(false)
 {
     setFixedSize(60, 60);
-
-    connect(this, &Cell::cellClicked, owner, &Grid::handleMousePress);
     setFocusPolicy(Qt::StrongFocus);
 }
 

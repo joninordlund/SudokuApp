@@ -1,5 +1,4 @@
 #include <vector>
-#include <iostream>
 
 #include "sudokusolver.h"
 #include "DLXBuilder.h"
@@ -40,11 +39,16 @@ pair<Matrix, vector<tuple<int, int, int>>> SudokuSolver::makeSudokuMatrix(const 
     return res;
 }
 
-vector<Matrix> SudokuSolver::getSolutions(const Matrix &sudoku)
+vector<Matrix> SudokuSolver::getSolutions(const Matrix &sudoku, bool random, int maxCount)
 {
     pair<Matrix, vector<tuple<int, int, int>>> sudokuMat = makeSudokuMatrix(sudoku);
     DLXBuilder dlx(sudokuMat.first);
-    auto solutions = dlx.findSolutions();
+    if(random)
+    {
+        maxCount = 1;
+        dlx.setRandomMode(true);
+    }
+    auto solutions = dlx.findSolutions(maxCount);
 
     Matrix solved(9, vector<int>(9, 0));
     vector<Matrix> res;
@@ -57,5 +61,12 @@ vector<Matrix> SudokuSolver::getSolutions(const Matrix &sudoku)
         }
         res.push_back(solved);
     }
+    dlx.setRandomMode(false);
     return res;
+}
+
+Matrix SudokuSolver::getRandomSudoku(const Matrix &sudoku)
+{
+    vector<Matrix> sol = getSolutions(sudoku, true, 1);
+    return sol[0];
 }

@@ -1,11 +1,10 @@
 #include "DLXBuilder.h"
 #include <limits>
-#include <algorithm>
 #include <cassert>
-#include <unordered_set>
 
-vector<vector<int>> DLXBuilder::findSolutions()
+vector<vector<int>> DLXBuilder::findSolutions(int maxCount)
 {
+    m_maxCount = maxCount;
     build();
     search(0);
 
@@ -196,15 +195,15 @@ void DLXBuilder::unhide(int p)
 
 void DLXBuilder::search(int x)
 {
-    int maxSolutions = 100;
     if (m_nodes[0].right == 0)
     {
-        std::vector<int> currentSolution(m_solution.begin(), m_solution.begin() + x);
+        vector<int> currentSolution(m_solution.begin(), m_solution.begin() + x);
         m_allSolutions.push_back(currentSolution);
         return;
     }
 
     int col = chooseCol();
+
     cover(col);
 
     int r = m_nodes[col].down;
@@ -239,7 +238,7 @@ void DLXBuilder::search(int x)
 
         r = m_nodes[r].down;
 
-        if (m_allSolutions.size() >= maxSolutions)
+        if (m_allSolutions.size() >= m_maxCount)
         {
             break;
         }
@@ -247,8 +246,16 @@ void DLXBuilder::search(int x)
     uncover(col);
 }
 
-// choose the first column with minimum length (MRV heuristic)
 int DLXBuilder::chooseCol()
+{
+    if (m_randomMode)
+        return chooseColRandom();
+
+    return chooseColMRV();
+}
+
+// choose the first column with minimum length (MRV heuristic)
+int DLXBuilder::chooseColMRV()
 {
     int best = -1;
     int bestLen = numeric_limits<int>::max();
@@ -262,4 +269,20 @@ int DLXBuilder::chooseCol()
         }
     }
     return best;
+}
+
+int DLXBuilder::chooseColRandom()
+{
+    vector<int> cols;
+    for (int col = m_nodes[0].right; col != 0; col = m_nodes[col].right)
+    {
+        if (m_nodes[col].len > 0)
+            cols.push_back(col);
+    }
+
+    if (cols.empty())
+        return chooseColMRV();
+
+    int idx = rand() % cols.size();
+    return cols[idx];
 }

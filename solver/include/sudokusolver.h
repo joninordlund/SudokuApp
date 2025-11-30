@@ -7,10 +7,9 @@ using Matrix = vector<vector<int>>;
 
 class SudokuSolver
 {
-public:
+    friend class SolutionSet;
     SudokuSolver() {}
-    vector<Matrix> getSolutions(const Matrix &grid);
-
-private:
     pair<Matrix, vector<tuple<int, int, int>>> makeSudokuMatrix(const Matrix &sudoku);
+    vector<Matrix> getSolutions(const Matrix &grid, bool random, int maxCount);
+    Matrix getRandomSudoku(const Matrix &sudoku);
 };

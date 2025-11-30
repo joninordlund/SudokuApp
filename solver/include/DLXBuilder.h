@@ -19,7 +19,7 @@ struct Node
             x = len;
             str = " ,len ";
         }
-        std::cout << "idx: " << idx << ", row " << row << ", up " << up << ", down " << down << ", left " << left << ", right " << right << str << x << endl;
+        cout << "idx: " << idx << ", row " << row << ", up " << up << ", down " << down << ", left " << left << ", right " << right << str << x << endl;
     }
     int up, down, left, right, top, len, row;
     Node() : up(-1), down(-1), left(-1), right(-1), top(-1), len(-1), row(-1) {}
@@ -28,13 +28,14 @@ struct Node
 class DLXBuilder
 {
 public:
-    DLXBuilder(Matrix mat) : m_matrix(mat)
+    DLXBuilder(Matrix mat) : m_matrix(mat), m_maxCount(0)
     {
         M = m_matrix.size();
         N = m_matrix[0].size();
         m_solution.resize(M);
     };
-    vector<vector<int>> findSolutions();
+    vector<vector<int>> findSolutions(int maxCount);
+    void setRandomMode(bool enabled) { m_randomMode = enabled; }
 
 private:
     vector<Node> m_nodes;
@@ -43,6 +44,8 @@ private:
     vector<int> m_solution;
     int N, M;
     vector<vector<int>> m_allSolutions;
+    int m_maxCount;
+    bool m_randomMode;
 
     void build();
     void search(int x);
@@ -51,4 +54,6 @@ private:
     void hide(int i);
     void unhide(int i);
     int chooseCol();
+    int chooseColRandom();
+    int chooseColMRV();
 };
