@@ -5,6 +5,7 @@
 
 #include "toggleswitch.h"
 #include "grid.h"
+#include "sudokuimage.h"
 
 class MainWindow : public QWidget
 {
@@ -16,7 +17,6 @@ class MainWindow : public QWidget
     // void onEditModeChanged(bool checked);
 
   private:
-    void setupUI();
 
     QPushButton *m_solveBtn;
     QPushButton *m_showSolBtn;
@@ -24,4 +24,5 @@ class MainWindow : public QWidget
     QPushButton* m_randomBtn;
     ToggleSwitch* m_editModeToggle;
     Grid* m_grid;
+    SudokuImage* m_image;
 };

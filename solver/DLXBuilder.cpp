@@ -1,6 +1,8 @@
 #include "DLXBuilder.h"
 #include <limits>
 #include <cassert>
+#include <algorithm>
+#include <random>
 
 vector<vector<int>> DLXBuilder::findSolutions(int maxCount)
 {
@@ -199,19 +201,31 @@ void DLXBuilder::search(int x)
     {
         vector<int> currentSolution(m_solution.begin(), m_solution.begin() + x);
         m_allSolutions.push_back(currentSolution);
+
         return;
     }
 
     int col = chooseCol();
-
     cover(col);
 
+    vector<int> rowCandidates;
     int r = m_nodes[col].down;
     while (r != col)
     {
-        m_solution[x] = m_nodes[r].row;
-        int j = r + 1;
-        while (j != r)
+        rowCandidates.push_back(r);
+        r = m_nodes[r].down;
+    }
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(rowCandidates.begin(), rowCandidates.end(), g);
+
+    for (int r_shuffled : rowCandidates)
+    {
+        m_solution[x] = m_nodes[r_shuffled].row;
+
+        int j = r_shuffled + 1;
+        while (j != r_shuffled)
         {
             if (m_nodes[j].top < 0) // spacer
             {
@@ -224,8 +238,8 @@ void DLXBuilder::search(int x)
 
         search(x + 1);
 
-        int t = r - 1;
-        while (t != r)
+        int t = r_shuffled - 1;
+        while (t != r_shuffled)
         {
             if (m_nodes[t].top < 0) // spacer
             {
@@ -235,8 +249,6 @@ void DLXBuilder::search(int x)
             uncover(m_nodes[t].top);
             t--;
         }
-
-        r = m_nodes[r].down;
 
         if (m_allSolutions.size() >= m_maxCount)
         {
@@ -248,9 +260,6 @@ void DLXBuilder::search(int x)
 
 int DLXBuilder::chooseCol()
 {
-    if (m_randomMode)
-        return chooseColRandom();
-
     return chooseColMRV();
 }
 
@@ -271,18 +280,4 @@ int DLXBuilder::chooseColMRV()
     return best;
 }
 
-int DLXBuilder::chooseColRandom()
-{
-    vector<int> cols;
-    for (int col = m_nodes[0].right; col != 0; col = m_nodes[col].right)
-    {
-        if (m_nodes[col].len > 0)
-            cols.push_back(col);
-    }
 
-    if (cols.empty())
-        return chooseColMRV();
-
-    int idx = rand() % cols.size();
-    return cols[idx];
-}

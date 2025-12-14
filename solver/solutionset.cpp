@@ -17,9 +17,11 @@ Matrix SolutionSet::getRandomSudoku(const Matrix &sudoku)
 
 vector<vector<int> > SolutionSet::next()
 {
-    if(count() > 0) {
+    if(count() > 0)
+    {
+        Matrix solution = m_solutions[m_index];
         m_index = min(m_index + 1, min(m_maxSolCount, count()));
-        return m_solutions[m_index];
+        return solution;
     }
     cout << "Sudoku has no solutions";
     return{{}};

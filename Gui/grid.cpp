@@ -29,9 +29,6 @@ Grid::Grid(QWidget* parent) :
         layout->addWidget(m_cells[i], row, col);
     }
     updateUI();
-    // fromMatrix(m_currentSudoku);
-    // m_currentSudoku = toMatrix();
-    // setFocusPolicy(Qt::StrongFocus);
     grabKeyboard();
 }
 
@@ -149,6 +146,9 @@ void Grid::keyPressEvent(QKeyEvent *event)
                 m_lastSelectedCell->setDigit(0, false);
                 m_lastSelectedCell->clearCornerMarks();
                 m_lastSelectedCell->clearCenterMarks();
+                int row = m_lastSelectedCell->row();
+                int col = m_lastSelectedCell->col();
+                m_currentSudoku.setDigit(row, col, 0, false);
             }
         }
         return;
@@ -211,6 +211,11 @@ void Grid::onShowSolution()
     {
         m_currentSudoku.applySolution(set.next());
         qDebug() << "solution count:" << set.count();
+    }
+    else
+    {
+        qDebug() << "sudoku has no solutions!";
+
     }
     updateUI();
 }

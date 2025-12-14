@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <iostream>
 
-SudokuReader::SudokuReader(const cv::Mat &img) : image(img)
+void SudokuReader::setImage(const cv::Mat &img)
 {
     processor = std::make_unique<ImageProcessor>(img);
     tess = std::make_unique<tesseract::TessBaseAPI>();
@@ -26,12 +26,12 @@ SudokuReader::SudokuReader(const cv::Mat &img) : image(img)
     tess->SetVariable("classify_bln_numeric_mode", "1");
     tess->SetVariable("enable_new_segsearch", "0");
     tess->SetVariable("classify_enable_learning", "0");
-    tess->SetVariable("classify_enable_adaptive_matcher", "0");
+    tess->SetVariable("classify_enable_adaptive_matcher", "1");
     tess->SetVariable("enable_new_segsearch", "0");
 }
-SudokuGrid SudokuReader::getSudokuCells(const cv::Mat &processedImg)
+reader::SudokuGrid SudokuReader::getSudokuCells(const cv::Mat &processedImg)
 {
-    SudokuGrid grid;
+    reader::SudokuGrid grid;
     cv::Mat cell;
 
     for (int y = 0; y < 9; y++)
@@ -40,11 +40,14 @@ SudokuGrid SudokuReader::getSudokuCells(const cv::Mat &processedImg)
         {
             tess->Clear();
             cell = processor->getCellImage(processedImg, x, y);
+            // cv::bitwise_not(cell, cell); // numero mustaksi
+            // cv::imshow("Cell", cell);
+            // cv::waitKey(0);
             tess->SetImage(cell.data, cell.cols, cell.rows, cell.channels(), cell.step1());
             tess->Recognize(0);
             const char *outText = tess->GetUTF8Text();
             float confidence = tess->MeanTextConf();
-            if (confidence < 60)
+            if (confidence < 80)
             {
                 grid[y][x] = 0;
             }
@@ -57,5 +60,9 @@ SudokuGrid SudokuReader::getSudokuCells(const cv::Mat &processedImg)
             delete[] outText;
         }
     }
+    cv::Mat fullProcessedImage = processor->getProcessedSudokuImage(processedImg);
+    cv::imwrite("debug_final.png", fullProcessedImage);
+    // cv::imshow("Koko prosessoitu ruudukko (OCR-syöte)", fullProcessedImage);
+    // cv::waitKey(0);
     return grid;
 }

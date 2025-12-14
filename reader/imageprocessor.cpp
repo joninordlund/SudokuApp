@@ -59,8 +59,8 @@ cv::Mat ImageProcessor::cropSquare(cv::Mat thresh)
         cv::rectangle(rect, bestSquareRect, cv::Scalar(0, 255, 0), 2);
         cv::Mat cropped = image(bestSquareRect).clone();
 
-        cv::imshow("Cropped", cropped);
-        cv::waitKey(0);
+        // cv::imshow("Cropped", cropped);
+        // cv::waitKey(0);
 
         return cropped;
     }
@@ -69,7 +69,7 @@ cv::Mat ImageProcessor::cropSquare(cv::Mat thresh)
         std::cerr << "Error: couldn't find a suitable square" << std::endl;
         return cv::Mat();
     }
-}
+};
 
 cv::Mat ImageProcessor::deskewImage(const cv::Mat &cropped)
 {
@@ -147,9 +147,6 @@ cv::Mat ImageProcessor::deskewImage(const cv::Mat &cropped)
     cv::cvtColor(cropped, gray, cv::COLOR_BGR2GRAY);
     cv::warpPerspective(gray, deskewedImage, perspectiveTr, cv::Size(width, height));
 
-    cv::imshow("Suoristettu kuva", deskewedImage);
-    cv::waitKey(0);
-
     return deskewedImage;
 }
 cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
@@ -165,20 +162,17 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
                        .clone();
     cv::Mat thresh, blurred;
     cv::GaussianBlur(cell, blurred, cv::Size(3, 3), 0);
-    // weird things happen if parameter C is negative.  For example, dilate and erode
-    // change roles. That's why the code may look a little bit weird.
 
     cv::adaptiveThreshold(blurred, thresh, 255,
-                          cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY_INV,
+                          cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY,
                           15,
                           -1);
-    cv::Mat noiseKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
-    cv::dilate(thresh, thresh, noiseKernel, cv::Point(-1, -1), 1);
+    // cv::dilate(thresh, thresh, dilateKernel, cv::Point(-1, -1), 1);
 
-    cv::Mat dilateKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
-    cv::erode(thresh, thresh, dilateKernel, cv::Point(-1, -1), 1);
-
-    cv::bitwise_not(thresh, thresh);
+    cv::Mat erodeKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4, 4));
+    cv::erode(thresh, thresh, erodeKernel, cv::Point(-1, -1), 1);
+    cv::Mat dilateKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+    cv::dilate(thresh, thresh, dilateKernel, cv::Point(-1, -1), 3);
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -216,12 +210,81 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
                            padding,
                            cv::BORDER_CONSTANT,
                            cv::Scalar(0));
-        cv::imshow("getcellimage kuva", croppedNumber);
-        cv::waitKey(0);
-        return croppedNumber;
+        int DESIRED_SIZE = 100;
+
+
+        cv::Mat resizedNumber;
+        double aspectRatio = (double)croppedNumber.cols / croppedNumber.rows;
+        int newWidth, newHeight;
+
+        if (aspectRatio > 1.0)
+        {
+            newWidth = DESIRED_SIZE;
+            newHeight = cvRound(DESIRED_SIZE / aspectRatio);
+        }
+        else
+        {
+
+            newHeight = DESIRED_SIZE;
+            newWidth = cvRound(DESIRED_SIZE * aspectRatio);
+        }
+
+        cv::resize(croppedNumber, resizedNumber, cv::Size(newWidth, newHeight));
+        cv::Mat finalCell = cv::Mat::zeros(DESIRED_SIZE, DESIRED_SIZE, resizedNumber.type());
+
+        int x_offset = (DESIRED_SIZE - newWidth) / 2;
+        int y_offset = (DESIRED_SIZE - newHeight) / 2;
+
+        resizedNumber.copyTo(finalCell(cv::Rect(x_offset, y_offset, newWidth, newHeight)));
+
+        return finalCell;
     }
     else
     {
         return cv::Mat::ones(50, 50, thresh.type()) * 255;
     }
+}
+
+cv::Mat ImageProcessor::getProcessedSudokuImage(const cv::Mat &deskewedOriginal)
+{
+    // Määritä solujen koko.
+    // Oletetaan, että deskewedOriginal on jo deskewedSudoku (900x900)
+    int singleCellSize = deskewedOriginal.rows / 9;
+
+    cv::Mat finalImage; // Lopputulos (9x9 koottu ruudukko)
+
+    // Iteroi riveittäin (y)
+    for (int y = 0; y < 9; y++)
+    {
+        cv::Mat rowImage; // Tähän kerätään yhden rivin (9 solua) kuva
+
+        // Iteroi sarakkeittain (x)
+        for (int x = 0; x < 9; x++)
+        {
+
+            cv::Mat cell = getCellImage(deskewedOriginal, x, y);
+
+            cv::Mat resizedCell;
+            cv::resize(cell, resizedCell, cv::Size(singleCellSize, singleCellSize));
+
+            if (x == 0)
+            {
+                rowImage = resizedCell;
+            }
+            else
+            {
+                cv::hconcat(rowImage, resizedCell, rowImage);
+            }
+        }
+
+        if (y == 0)
+        {
+            finalImage = rowImage;
+        }
+        else
+        {
+            cv::vconcat(finalImage, rowImage, finalImage);
+        }
+    }
+    return finalImage;
 }

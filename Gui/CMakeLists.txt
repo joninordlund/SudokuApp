@@ -5,6 +5,7 @@ add_executable(SudokuApp
     include/mainwindow.h mainwindow.cpp
     include/toggleswitch.h toggleswitch.cpp
     include/sudokumatrix.h sudokumatrix.cpp
+    include/sudokuimage.h sudokuimage.cpp
 )
 
 target_include_directories(SudokuApp

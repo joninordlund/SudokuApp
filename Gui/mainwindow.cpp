@@ -16,18 +16,14 @@ const std::vector<std::vector<int>> sudoku{
 MainWindow::MainWindow(QWidget *parent)
     : QWidget{parent}
 {
-    setFixedSize(1100, 640);
-    setupUI();
-}
+    setFixedSize(1140, 640);
 
-void MainWindow::setupUI()
-{
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
 
-    QWidget* topArea = new QWidget;
-    QHBoxLayout *squaresLayout = new QHBoxLayout(topArea);
-    squaresLayout->setSpacing(20);
-    squaresLayout->setContentsMargins(0, 0, 0, 0);
+    QWidget* centerArea = new QWidget;
+    QHBoxLayout *centerLayout = new QHBoxLayout(centerArea);
+    centerLayout->setSpacing(20);
+    centerLayout->setContentsMargins(0, 0, 0, 0);
 
     QWidget* leftSquare = new QWidget;
     leftSquare->setFixedSize(540, 540);
@@ -36,18 +32,21 @@ void MainWindow::setupUI()
     m_grid = new Grid(leftSquare);
     leftLayout->addWidget(m_grid);
     leftLayout->setContentsMargins(0, 0, 0, 0);
-    squaresLayout->addWidget(leftSquare);
+    centerLayout->addWidget(leftSquare);
 
 
-    // QWidget *rightSquare = new QWidget;
-    // rightSquare->setFixedSize(540, 540);
-    // m_solutionGrid = new Grid(rightSquare);
-    // QHBoxLayout *rightLayout = new QHBoxLayout(rightSquare);
-    // rightLayout->addWidget(m_solutionGrid);
-    // rightLayout->setContentsMargins(0, 0, 0, 0);
-    // squaresLayout->addWidget(rightSquare);
+    QFrame *rightSquare = new QFrame;
+    rightSquare->setFixedSize(540, 540);
+    rightSquare->setFrameShape(QFrame::Box);
+    rightSquare->setLineWidth(3);
 
-    mainLayout->addWidget(topArea);
+    QHBoxLayout *rightLayout = new QHBoxLayout(rightSquare);
+    m_image = new SudokuImage(rightSquare);
+    rightLayout->addWidget(m_image);
+    rightLayout->setContentsMargins(8, 8, 8, 8);
+    centerLayout->addWidget(rightSquare);
+
+    mainLayout->addWidget(centerArea);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->setContentsMargins(0, 0, 0, 0);
