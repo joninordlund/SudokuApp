@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "sudokureader.h"
 
 using namespace std;
 
@@ -31,6 +32,7 @@ class SudokuMatrix
 
     void applySolution(const vector<vector<int>>& sol);
 
+    void setGivens(const reader::SudokuGrid &clues);
   private:
     vector<vector<CellData>> m_data;
     vector<vector<CellData>> m_tmpData;

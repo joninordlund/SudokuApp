@@ -2,16 +2,6 @@
 #include "grid.h"
 #include <QVBoxLayout>
 
-const std::vector<std::vector<int>> sudoku{
-    {0, 0, 0, 2, 0, 5, 0, 0, 0},
-    {0, 0, 8, 0, 0, 0, 2, 0, 0},
-    {0, 5, 0, 8, 0, 9, 0, 1, 0},
-    {9, 0, 7, 0, 0, 0, 8, 0, 6},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {6, 0, 2, 0, 0, 0, 3, 0, 9},
-    {0, 4, 0, 1, 0, 8, 0, 3, 0},
-    {0, 0, 6, 0, 0, 0, 5, 0, 0},
-    {0, 0, 0, 5, 0, 4, 0, 0, 0}};
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget{parent}
@@ -55,20 +45,27 @@ MainWindow::MainWindow(QWidget *parent)
     m_editModeToggle = new ToggleSwitch(this);
     m_clearBtn = new QPushButton("Clear");
     m_randomBtn = new QPushButton("Random");
+    m_undoBtn = new QPushButton("undo");
+    m_redoBtn = new QPushButton("redo");
 
     buttonLayout->addWidget(m_showSolBtn);
     buttonLayout->addWidget(m_clearBtn);
     buttonLayout->addWidget(m_randomBtn);
+    buttonLayout->addWidget(m_undoBtn);
+    buttonLayout->addWidget(m_redoBtn);
 
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_editModeToggle);
 
     mainLayout->addLayout(buttonLayout);
 
+    connect(m_image, &SudokuImage::newSudoku, m_grid, &Grid::newSudoku);
     connect(m_showSolBtn, &QPushButton::pressed, m_grid, &Grid::onShowSolution);
     connect(m_showSolBtn, &QPushButton::released, m_grid, &Grid::onHideSolution);
     connect(m_clearBtn, &QPushButton::clicked, m_grid, &Grid::onClearSolution);
     connect(m_randomBtn, &QPushButton::clicked, m_grid, &Grid::onRandom);
+    connect(m_undoBtn, &QPushButton::clicked, m_grid, &Grid::onUndo);
+    connect(m_redoBtn, &QPushButton::clicked, m_grid, &Grid::onRedo);
 
     connect(m_editModeToggle, &ToggleSwitch::toggled, m_grid, &Grid::onEditModeChanged);
 }

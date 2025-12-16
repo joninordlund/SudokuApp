@@ -22,6 +22,8 @@ class MainWindow : public QWidget
     QPushButton *m_showSolBtn;
     QPushButton* m_clearBtn;
     QPushButton* m_randomBtn;
+    QPushButton* m_undoBtn;
+    QPushButton* m_redoBtn;
     ToggleSwitch* m_editModeToggle;
     Grid* m_grid;
     SudokuImage* m_image;

@@ -63,3 +63,18 @@ void SudokuMatrix::applySolution(const vector<vector<int>>& solution)
         }
     }
 }
+
+void SudokuMatrix::setGivens(const reader::SudokuGrid& clues)
+{
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            m_data[i][j].value = clues[i][j];
+            if(clues[i][j] > 0)
+            {
+                m_data[i][j].isGiven = true;
+            }
+        }
+    }
+}

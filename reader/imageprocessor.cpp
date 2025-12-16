@@ -172,7 +172,7 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
     cv::Mat erodeKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4, 4));
     cv::erode(thresh, thresh, erodeKernel, cv::Point(-1, -1), 1);
     cv::Mat dilateKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
-    cv::dilate(thresh, thresh, dilateKernel, cv::Point(-1, -1), 3);
+    cv::dilate(thresh, thresh, dilateKernel, cv::Point(-1, -1), 4);
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);

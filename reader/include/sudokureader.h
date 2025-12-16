@@ -15,8 +15,11 @@ private:
     std::unique_ptr<tesseract::TessBaseAPI> tess;
     std::unique_ptr<ImageProcessor> processor;
 
+    void setImage(const cv::Mat &img);
+    std::pair<reader::SudokuGrid, cv::Mat> getSudokuCells(const cv::Mat &processedImg);
+
 public:
     SudokuReader(){};
-    reader::SudokuGrid getSudokuCells(const cv::Mat &deskewedImage);
-    void setImage(const cv::Mat &img);
+    std::pair<reader::SudokuGrid, cv::Mat> getImageData(const cv::Mat& img);
+    const ImageProcessor& getProcessor() const { return *processor; }
 };

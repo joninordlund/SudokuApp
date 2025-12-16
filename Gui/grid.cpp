@@ -1,4 +1,5 @@
 #include "grid.h"
+#include "cellchange.h"
 #include "sudokusolver.h"
 
 #include <QFrame>
@@ -10,13 +11,14 @@
 
 Grid::Grid(QWidget* parent) :
     QWidget(parent),
+    m_history(this),
     m_cells(81),
     m_lastSelectedCell(nullptr),
     m_isDragging(false),
     m_dirty(false),
     m_editMode(SOLVE)
 {
-    QGridLayout *layout = new QGridLayout(this);
+    QGridLayout* layout = new QGridLayout(this);
     layout->setSpacing(0);
     layout->setContentsMargins(8, 8, 8, 8);
 
@@ -28,29 +30,45 @@ Grid::Grid(QWidget* parent) :
         connect(m_cells[i], &Cell::cellClicked, this, &Grid::handleMousePress);
         layout->addWidget(m_cells[i], row, col);
     }
+
     updateUI();
     grabKeyboard();
 }
 
-vector<vector<CellData>> Grid::toMatrix()
-{
-    vector<vector<CellData>> matrix(9, vector<CellData>(9, CellData{}));
-    for (const Cell *cell : m_cells){
-        matrix[cell->row()][cell->col()] = CellData{cell->digit(), cell->isGiven()};
-    }
-    return matrix;
-}
+// vector<vector<CellData>> Grid::toMatrix()
+// {
+//     vector<vector<CellData>> matrix(9, vector<CellData>(9, CellData{}));
+//     for (const Cell* cell : m_cells)
+//     {
+//         matrix[cell->row()][cell->col()] = CellData{cell->digit(), cell->isGiven()};
+//     }
+//     return matrix;
+// }
 
 void Grid::updateUI()
 {
-    for (Cell *cell : m_cells)
+    for (Cell* cell : m_cells)
     {
         CellData data = m_currentSudoku.data(cell->row(), cell->col());
         cell->setDigit(data.value, data.isGiven);
     }
 }
 
-void Grid::handleMousePress(Cell *cell, bool ctrl)
+void Grid::applyStateChange(int x, int y, int digit)
+{
+    Cell* cell = m_cells[x * 9 + y];
+    m_currentSudoku.setDigit(x, y, digit, m_editMode == EDIT_CLUES);
+    cell->setDigit(digit, m_editMode == EDIT_CLUES);
+}
+
+void Grid::newSudoku(const reader::SudokuGrid& grid)
+{
+    qDebug() << "got sudoku";
+    m_currentSudoku.setGivens(grid);
+    updateUI();
+}
+
+void Grid::handleMousePress(Cell* cell, bool ctrl)
 {
     m_isDragging = true;
     if (ctrl)
@@ -85,16 +103,16 @@ void Grid::handleMousePress(Cell *cell, bool ctrl)
     m_lastSelectedCell->setCursor(true);
 }
 
-void Grid::mouseReleaseEvent(QMouseEvent *event)
+void Grid::mouseReleaseEvent(QMouseEvent* event)
 {
     m_isDragging = false;
 }
 
-void Grid::mouseMoveEvent(QMouseEvent *event)
+void Grid::mouseMoveEvent(QMouseEvent* event)
 {
     if (m_isDragging && event->buttons() & Qt::LeftButton)
     {
-        Cell *cell = dynamic_cast<Cell *>(childAt(event->pos()));
+        Cell* cell = dynamic_cast<Cell*>(childAt(event->pos()));
         if (cell)
         {
             m_selected.insert(cell);
@@ -106,7 +124,7 @@ void Grid::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
-void Grid::keyPressEvent(QKeyEvent *event)
+void Grid::keyPressEvent(QKeyEvent* event)
 {
     bool alt = event->modifiers() & Qt::AltModifier;     // corner pencil marks
     bool shift = event->modifiers() & Qt::ShiftModifier; // center pencil marks
@@ -117,24 +135,32 @@ void Grid::keyPressEvent(QKeyEvent *event)
     int digit = key - Qt::Key_0;
     if (digit >= 1 && digit <= 9)
     {
+        vector<CellChange> command;
         for (Cell* cell : as_const(m_selected))
         {
+            CellChange cc;
             if (!cell->isGiven() || m_editMode == EDIT_CLUES)
             {
-                m_currentSudoku.setDigit(cell->row(), cell->col(), digit, m_editMode == EDIT_CLUES);
-                cell->setDigit(digit, m_editMode == EDIT_CLUES);
+                int x = cell->row();
+                int y = cell->col();
+                if (digit != m_currentSudoku.digit(x, y))
+                {
+                    // save old state for the history
+                    cc.x = x;
+                    cc.y = y;
+                    cc.oldState.digit = m_currentSudoku.digit(x, y);
+                    applyStateChange(x, y, digit);
+                    // set new state for the history
+                    cc.newState.digit = digit;
+                    command.push_back(cc);
+                }
             }
         }
-        return;
-    }
-    if (key == Qt::Key_Escape)
-    {
-        for (Cell* cell : as_const(m_selected))
+        if (!command.empty())
         {
-            cell->setSelected(false);
-            cell->setCursor(false);
+            m_history.setNewCommand(command);
         }
-        m_lastSelectedCell = nullptr;
+
         return;
     }
     if (key == Qt::Key_Delete || key == Qt::Key_Backspace)
@@ -153,7 +179,16 @@ void Grid::keyPressEvent(QKeyEvent *event)
         }
         return;
     }
-
+    if (key == Qt::Key_Escape)
+    {
+        for (Cell* cell : as_const(m_selected))
+        {
+            cell->setSelected(false);
+            cell->setCursor(false);
+        }
+        m_lastSelectedCell = nullptr;
+        return;
+    }
     if (m_lastSelectedCell)
     {
         int row, col, newRow, newCol;
@@ -162,23 +197,23 @@ void Grid::keyPressEvent(QKeyEvent *event)
 
         switch (key)
         {
-        case Qt::Key_Left:
-            newCol = max(0, col - 1);
-            break;
-        case Qt::Key_Right:
-            newCol = min(8, col + 1);
-            break;
-        case Qt::Key_Up:
-            newRow = max(0, row - 1);
-            break;
-        case Qt::Key_Down:
-            newRow = min(8, row + 1);
-            break;
-        default:
-            return;
+            case Qt::Key_Left:
+                newCol = max(0, col - 1);
+                break;
+            case Qt::Key_Right:
+                newCol = min(8, col + 1);
+                break;
+            case Qt::Key_Up:
+                newRow = max(0, row - 1);
+                break;
+            case Qt::Key_Down:
+                newRow = min(8, row + 1);
+                break;
+            default:
+                return;
         }
 
-        Cell *nextCell = m_cells[newRow * 9 + newCol];
+        Cell* nextCell = m_cells[newRow * 9 + newCol];
         if (ctrl)
         {
             m_selected.insert(nextCell);
@@ -207,7 +242,7 @@ void Grid::onShowSolution()
     m_currentSudoku.saveData();
     m_currentSudoku.clearUserDigits();
     set.updateSolutions(m_currentSudoku.toIntMatrix());
-    if(set.count() > 0)
+    if (set.count() > 0)
     {
         m_currentSudoku.applySolution(set.next());
         qDebug() << "solution count:" << set.count();
@@ -215,7 +250,6 @@ void Grid::onShowSolution()
     else
     {
         qDebug() << "sudoku has no solutions!";
-
     }
     updateUI();
 }
@@ -251,9 +285,9 @@ void Grid::onClearSolution()
     msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Ok);
     int ret = msgBox.exec();
-    if(ret == QMessageBox::Ok)
+    if (ret == QMessageBox::Ok)
     {
-        if(m_editMode == SOLVE)
+        if (m_editMode == SOLVE)
         {
             m_currentSudoku.clearUserDigits();
         }
@@ -263,11 +297,8 @@ void Grid::onClearSolution()
         }
         updateUI();
     }
-
 }
 
 void Grid::onRandom()
 {
-
 }
-

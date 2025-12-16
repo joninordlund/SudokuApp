@@ -1,12 +1,20 @@
 #include "sudokureader.h"
 #include <unistd.h>
 
-#include <opencv2/opencv.hpp>
-#include <tesseract/baseapi.h>
-#include <stdexcept>
 #include <iostream>
+#include <opencv2/opencv.hpp>
+#include <stdexcept>
+#include <tesseract/baseapi.h>
 
-void SudokuReader::setImage(const cv::Mat &img)
+std::pair<reader::SudokuGrid, cv::Mat> SudokuReader::getImageData(const cv::Mat& img)
+{
+    setImage(img);
+    cv::Mat processedImg = processor->getSudokuImage();
+    std::pair<reader::SudokuGrid, cv::Mat> data = getSudokuCells(processedImg);
+    return data;
+}
+
+void SudokuReader::setImage(const cv::Mat& img)
 {
     processor = std::make_unique<ImageProcessor>(img);
     tess = std::make_unique<tesseract::TessBaseAPI>();
@@ -29,7 +37,8 @@ void SudokuReader::setImage(const cv::Mat &img)
     tess->SetVariable("classify_enable_adaptive_matcher", "1");
     tess->SetVariable("enable_new_segsearch", "0");
 }
-reader::SudokuGrid SudokuReader::getSudokuCells(const cv::Mat &processedImg)
+
+std::pair <reader::SudokuGrid, cv::Mat> SudokuReader::getSudokuCells(const cv::Mat& processedImg)
 {
     reader::SudokuGrid grid;
     cv::Mat cell;
@@ -40,12 +49,9 @@ reader::SudokuGrid SudokuReader::getSudokuCells(const cv::Mat &processedImg)
         {
             tess->Clear();
             cell = processor->getCellImage(processedImg, x, y);
-            // cv::bitwise_not(cell, cell); // numero mustaksi
-            // cv::imshow("Cell", cell);
-            // cv::waitKey(0);
             tess->SetImage(cell.data, cell.cols, cell.rows, cell.channels(), cell.step1());
             tess->Recognize(0);
-            const char *outText = tess->GetUTF8Text();
+            const char* outText = tess->GetUTF8Text();
             float confidence = tess->MeanTextConf();
             if (confidence < 80)
             {
@@ -62,7 +68,6 @@ reader::SudokuGrid SudokuReader::getSudokuCells(const cv::Mat &processedImg)
     }
     cv::Mat fullProcessedImage = processor->getProcessedSudokuImage(processedImg);
     cv::imwrite("debug_final.png", fullProcessedImage);
-    // cv::imshow("Koko prosessoitu ruudukko (OCR-syöte)", fullProcessedImage);
-    // cv::waitKey(0);
-    return grid;
+
+    return std::make_pair(grid, fullProcessedImage);
 }
