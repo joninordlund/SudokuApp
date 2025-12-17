@@ -4,7 +4,7 @@ add_executable(SudokuApp
     grid.cpp include/grid.h
     include/mainwindow.h mainwindow.cpp
     include/toggleswitch.h toggleswitch.cpp
-    include/sudokumatrix.h sudokumatrix.cpp
+    include/sudokuboard.h sudokuboard.cpp
     include/sudokuimage.h sudokuimage.cpp
     include/history.h history.cpp
     include/cellchange.h

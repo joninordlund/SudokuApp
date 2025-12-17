@@ -3,12 +3,11 @@
 #include "cell.h"
 #include "history.h"
 #include "solutionset.h"
-#include "sudokumatrix.h"
+#include "sudokuboard.h"
 #include "sudokureader.h"
 
 #include <QVector>
 #include <QWidget>
-#include <vector>
 
 enum EEditMode {
     SOLVE = 1,
@@ -26,7 +25,8 @@ class Grid : public QWidget {
 
     // vector<vector<CellData>> toMatrix();
     // void fromMatrix(const vector<vector<CellData>>& matrix);
-    void applyStateChange(int x, int y, int digit);
+    void applyStateChange(int x, int y, int digit, bool isGiven);
+    History* getHistory() { return &m_history; }
 
   public slots:
     void newSudoku(const reader::SudokuGrid& grid);
@@ -38,19 +38,29 @@ class Grid : public QWidget {
     void onRandom();
     void onUndo() { m_history.undo(); }
     void onRedo() { m_history.redo(); }
+    void handleHistoryChanged();
+
+  signals:
+    void solutionCountChanged(int count, int maxCount);
 
   private:
     QVector<Cell*> m_cells;
-    QSet<Cell*> m_selected;
+    QSet<Cell*> m_selectedCellSet;
     Cell* m_lastSelectedCell;
     bool m_isDragging;
+    bool m_isPeeking;
     EEditMode m_editMode;
     bool m_dirty;
-    SudokuMatrix m_currentSudoku;
+    SudokuBoard m_board;
     SolutionSet m_solutionSet;
     History m_history;
 
     void updateUI();
+    void enterDigit(int digit);
+
+    void deleteCell();
+
+    void changeCell(int digit, bool isGiven);
 
   protected:
     void keyPressEvent(QKeyEvent* event);

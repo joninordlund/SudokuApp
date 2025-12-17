@@ -15,6 +15,7 @@ Grid::Grid(QWidget* parent) :
     m_cells(81),
     m_lastSelectedCell(nullptr),
     m_isDragging(false),
+    m_isPeeking(false),
     m_dirty(false),
     m_editMode(SOLVE)
 {
@@ -30,7 +31,7 @@ Grid::Grid(QWidget* parent) :
         connect(m_cells[i], &Cell::cellClicked, this, &Grid::handleMousePress);
         layout->addWidget(m_cells[i], row, col);
     }
-
+    connect(&m_history, &History::historyStateChanged, this, &Grid::handleHistoryChanged);
     updateUI();
     grabKeyboard();
 }
@@ -49,22 +50,23 @@ void Grid::updateUI()
 {
     for (Cell* cell : m_cells)
     {
-        CellData data = m_currentSudoku.data(cell->row(), cell->col());
+        CellData data = m_board.data(cell->row(), cell->col());
         cell->setDigit(data.value, data.isGiven);
     }
 }
 
-void Grid::applyStateChange(int x, int y, int digit)
+void Grid::applyStateChange(int x, int y, int digit, bool isGiven)
 {
     Cell* cell = m_cells[x * 9 + y];
-    m_currentSudoku.setDigit(x, y, digit, m_editMode == EDIT_CLUES);
-    cell->setDigit(digit, m_editMode == EDIT_CLUES);
+    m_board.setDigit(x, y, digit, isGiven);
+
+    cell->setDigit(digit, isGiven);
 }
 
 void Grid::newSudoku(const reader::SudokuGrid& grid)
 {
     qDebug() << "got sudoku";
-    m_currentSudoku.setGivens(grid);
+    m_board.setGivens(grid);
     updateUI();
 }
 
@@ -73,25 +75,25 @@ void Grid::handleMousePress(Cell* cell, bool ctrl)
     m_isDragging = true;
     if (ctrl)
     {
-        if (m_selected.contains(cell))
+        if (m_selectedCellSet.contains(cell))
         {
-            m_selected.remove(cell);
+            m_selectedCellSet.remove(cell);
             cell->setSelected(false);
         }
         else
         {
-            m_selected.insert(cell);
+            m_selectedCellSet.insert(cell);
             cell->setSelected(true);
         }
     }
     else
     {
-        for (Cell* cell : as_const(m_selected))
+        for (Cell* cell : as_const(m_selectedCellSet))
         {
             cell->setSelected(false);
         }
-        m_selected.clear();
-        m_selected.insert(cell);
+        m_selectedCellSet.clear();
+        m_selectedCellSet.insert(cell);
         cell->setSelected(true);
     }
     if (m_lastSelectedCell)
@@ -115,7 +117,7 @@ void Grid::mouseMoveEvent(QMouseEvent* event)
         Cell* cell = dynamic_cast<Cell*>(childAt(event->pos()));
         if (cell)
         {
-            m_selected.insert(cell);
+            m_selectedCellSet.insert(cell);
             m_lastSelectedCell->setCursor(false);
             cell->setSelected(true);
             cell->setCursor(true);
@@ -126,6 +128,12 @@ void Grid::mouseMoveEvent(QMouseEvent* event)
 
 void Grid::keyPressEvent(QKeyEvent* event)
 {
+    if (m_isPeeking)
+    {
+        event->ignore();
+        return;
+    }
+
     bool alt = event->modifiers() & Qt::AltModifier;     // corner pencil marks
     bool shift = event->modifiers() & Qt::ShiftModifier; // center pencil marks
     bool ctrl = event->modifiers() & Qt::ControlModifier;
@@ -135,53 +143,17 @@ void Grid::keyPressEvent(QKeyEvent* event)
     int digit = key - Qt::Key_0;
     if (digit >= 1 && digit <= 9)
     {
-        vector<CellChange> command;
-        for (Cell* cell : as_const(m_selected))
-        {
-            CellChange cc;
-            if (!cell->isGiven() || m_editMode == EDIT_CLUES)
-            {
-                int x = cell->row();
-                int y = cell->col();
-                if (digit != m_currentSudoku.digit(x, y))
-                {
-                    // save old state for the history
-                    cc.x = x;
-                    cc.y = y;
-                    cc.oldState.digit = m_currentSudoku.digit(x, y);
-                    applyStateChange(x, y, digit);
-                    // set new state for the history
-                    cc.newState.digit = digit;
-                    command.push_back(cc);
-                }
-            }
-        }
-        if (!command.empty())
-        {
-            m_history.setNewCommand(command);
-        }
-
+        enterDigit(digit);
         return;
     }
+
     if (key == Qt::Key_Delete || key == Qt::Key_Backspace)
     {
-        if (m_lastSelectedCell)
-        {
-            if (!m_lastSelectedCell->isGiven() || m_editMode == EDIT_CLUES)
-            {
-                m_lastSelectedCell->setDigit(0, false);
-                m_lastSelectedCell->clearCornerMarks();
-                m_lastSelectedCell->clearCenterMarks();
-                int row = m_lastSelectedCell->row();
-                int col = m_lastSelectedCell->col();
-                m_currentSudoku.setDigit(row, col, 0, false);
-            }
-        }
-        return;
+        deleteCell();
     }
     if (key == Qt::Key_Escape)
     {
-        for (Cell* cell : as_const(m_selected))
+        for (Cell* cell : as_const(m_selectedCellSet))
         {
             cell->setSelected(false);
             cell->setCursor(false);
@@ -216,17 +188,17 @@ void Grid::keyPressEvent(QKeyEvent* event)
         Cell* nextCell = m_cells[newRow * 9 + newCol];
         if (ctrl)
         {
-            m_selected.insert(nextCell);
+            m_selectedCellSet.insert(nextCell);
             nextCell->setSelected(true);
         }
         else
         {
-            for (Cell* cell : as_const(m_selected))
+            for (Cell* cell : as_const(m_selectedCellSet))
             {
                 cell->setSelected(false);
             }
-            m_selected.clear();
-            m_selected.insert(nextCell);
+            m_selectedCellSet.clear();
+            m_selectedCellSet.insert(nextCell);
             nextCell->setSelected(true);
         }
 
@@ -238,14 +210,14 @@ void Grid::keyPressEvent(QKeyEvent* event)
 
 void Grid::onShowSolution()
 {
-    SolutionSet set;
-    m_currentSudoku.saveData();
-    m_currentSudoku.clearUserDigits();
-    set.updateSolutions(m_currentSudoku.toIntMatrix());
-    if (set.count() > 0)
+    m_isPeeking = true;
+    m_board.saveData();
+    m_board.clearUserDigits();
+    m_solutionSet.updateSolutions(m_board.toIntMatrix());
+    if (m_solutionSet.count() > 0)
     {
-        m_currentSudoku.applySolution(set.next());
-        qDebug() << "solution count:" << set.count();
+        m_board.applySolution(m_solutionSet.next());
+        qDebug() << "solution count:" << m_solutionSet.count();
     }
     else
     {
@@ -256,7 +228,8 @@ void Grid::onShowSolution()
 
 void Grid::onHideSolution()
 {
-    m_currentSudoku.restoreData();
+    m_isPeeking = false;
+    m_board.restoreData();
     updateUI();
 }
 
@@ -289,11 +262,11 @@ void Grid::onClearSolution()
     {
         if (m_editMode == SOLVE)
         {
-            m_currentSudoku.clearUserDigits();
+            m_board.clearUserDigits();
         }
         else
         {
-            m_currentSudoku.clearAll();
+            m_board.clearAll();
         }
         updateUI();
     }
@@ -301,4 +274,52 @@ void Grid::onClearSolution()
 
 void Grid::onRandom()
 {
+}
+
+void Grid::handleHistoryChanged()
+{
+    qDebug() << "SOl COJSGH";
+    m_solutionSet.updateSolutions(m_board.toIntMatrix());
+    emit solutionCountChanged(m_solutionSet.count(), m_solutionSet.maxCount());
+}
+
+void Grid::enterDigit(int digit)
+{
+    changeCell(digit, m_editMode == EDIT_CLUES);
+}
+
+void Grid::deleteCell()
+{
+    changeCell(0, false);
+}
+
+void Grid::changeCell(int digit, bool isGiven)
+{
+    vector<CellChange> command;
+    for (Cell* cell : as_const(m_selectedCellSet))
+    {
+        CellChange cc;
+        if (!cell->isGiven() || m_editMode == EDIT_CLUES)
+        {
+            int x = cell->row();
+            int y = cell->col();
+            if (m_board.digit(x, y) != digit)
+            {
+                // save old state for the history
+                cc.x = x;
+                cc.y = y;
+                cc.oldState.digit = m_board.digit(x, y);
+                cc.oldState.isGiven = m_board.isGiven(x, y);
+                applyStateChange(x, y, digit, isGiven);
+                // set new state for the history
+                cc.newState.digit = digit;
+                cc.newState.isGiven = isGiven;
+                command.push_back(cc);
+            }
+        }
+    }
+    if (!command.empty())
+    {
+        m_history.setNewCommand(command);
+    }
 }

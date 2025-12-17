@@ -2,15 +2,22 @@
 
 #include "cellchange.h"
 
+#include <QObject>
+
 class Grid;
 
-class History {
+class History : public QObject {
+
+    Q_OBJECT
   public:
     History(Grid* grid)
         : m_grid(grid) {};
     void undo();
     void redo();
     void setNewCommand(vector<CellChange>);
+
+  signals:
+    void historyStateChanged(bool canUndo, bool canRedo);
 
   private:
     vector<vector<CellChange>> m_past;

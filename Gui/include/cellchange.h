@@ -1,14 +1,13 @@
 #pragma once
 
-#include <set>
-#include <vector>
-
+#include <cstdint>
 using namespace std;
 
 struct State {
     int digit;
-    set<int> centerMarks;
-    set<int> cornerMarks;
+    bool isGiven;
+    uint16_t centerMarks;
+    uint16_t cornerMarks;
 };
 
 struct CellChange {

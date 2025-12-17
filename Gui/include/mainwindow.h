@@ -14,7 +14,8 @@ class MainWindow : public QWidget
     explicit MainWindow(QWidget *parent = nullptr);
 
   private slots:
-    // void onEditModeChanged(bool checked);
+    void updateUndoRedoButtons(bool canUndo, bool canRedo);
+    void updateCountLabel(int count, int maxCount);
 
   private:
 
@@ -27,4 +28,5 @@ class MainWindow : public QWidget
     ToggleSwitch* m_editModeToggle;
     Grid* m_grid;
     SudokuImage* m_image;
+    QLabel* m_solCountLbl;
 };

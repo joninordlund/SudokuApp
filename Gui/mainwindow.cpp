@@ -47,7 +47,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_randomBtn = new QPushButton("Random");
     m_undoBtn = new QPushButton("undo");
     m_redoBtn = new QPushButton("redo");
+    m_solCountLbl = new QLabel("Solution count: ");
 
+    buttonLayout->addWidget(m_solCountLbl);
+    buttonLayout->addStretch();
     buttonLayout->addWidget(m_showSolBtn);
     buttonLayout->addWidget(m_clearBtn);
     buttonLayout->addWidget(m_randomBtn);
@@ -68,4 +71,26 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_redoBtn, &QPushButton::clicked, m_grid, &Grid::onRedo);
 
     connect(m_editModeToggle, &ToggleSwitch::toggled, m_grid, &Grid::onEditModeChanged);
+    connect(m_grid->getHistory(), &History::historyStateChanged, this, &MainWindow::updateUndoRedoButtons);
+    connect(m_grid, &Grid::solutionCountChanged, this, &MainWindow::updateCountLabel);
+}
+
+void MainWindow::updateUndoRedoButtons(bool canUndo, bool canRedo)
+{
+    m_undoBtn->setEnabled(canUndo);
+    m_redoBtn->setEnabled(canRedo);
+}
+
+void MainWindow::updateCountLabel(int count, int maxCount)
+{
+    QString str;
+    if (count >= maxCount)
+    {
+        QTextStream(&str) << "Solution count: " << maxCount << "+";
+    }
+    else
+    {
+        QTextStream(&str) << "Solution count: " << count;
+    }
+    m_solCountLbl->setText(str);
 }

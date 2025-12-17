@@ -1,13 +1,13 @@
-#include "sudokumatrix.h"
+#include "sudokuboard.h"
 #include <QDebug>
 
-SudokuMatrix::SudokuMatrix() :
+SudokuBoard::SudokuBoard() :
     m_data(9, vector<CellData>(9, CellData{0, false}))
 {
     qDebug() << "constructor";
 }
 
-void SudokuMatrix::clearUserDigits()
+void SudokuBoard::clearUserDigits()
 {
     for (int i = 0; i < 9; i++)
     {
@@ -21,7 +21,7 @@ void SudokuMatrix::clearUserDigits()
     }
 }
 
-void SudokuMatrix::clearAll()
+void SudokuBoard::clearAll()
 {
     for (int i = 0; i < 9; i++)
     {
@@ -32,7 +32,7 @@ void SudokuMatrix::clearAll()
     }
 }
 
-vector<vector<int>> SudokuMatrix::toIntMatrix() const
+vector<vector<int>> SudokuBoard::toIntMatrix() const
 {
     vector<vector<int>> matrix(9, vector<int>(9, 0));
     for (int i = 0; i < 9; i++)
@@ -45,12 +45,12 @@ vector<vector<int>> SudokuMatrix::toIntMatrix() const
     return matrix;
 }
 
-vector<vector<CellData>> SudokuMatrix::toCellDataMatrix() const
+vector<vector<CellData>> SudokuBoard::toCellDataMatrix() const
 {
     return m_data;
 }
 
-void SudokuMatrix::applySolution(const vector<vector<int>>& solution)
+void SudokuBoard::applySolution(const vector<vector<int>>& solution)
 {
     for (int i = 0; i < 9; i++)
     {
@@ -64,7 +64,7 @@ void SudokuMatrix::applySolution(const vector<vector<int>>& solution)
     }
 }
 
-void SudokuMatrix::setGivens(const reader::SudokuGrid& clues)
+void SudokuBoard::setGivens(const reader::SudokuGrid& clues)
 {
     for (int i = 0; i < 9; i++)
     {

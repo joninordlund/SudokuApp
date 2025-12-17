@@ -9,11 +9,11 @@ struct CellData {
     bool isGiven = false;
 };
 
-class SudokuMatrix
+class SudokuBoard
 {
   public:
-    SudokuMatrix();
-    SudokuMatrix(const vector<vector<int>>& puzzle);
+    SudokuBoard();
+    SudokuBoard(const vector<vector<int>>& puzzle);
 
     CellData data(int row, int col) const { return m_data[row][col]; }
     int digit(int row, int col) const { return m_data[row][col].value; }
@@ -27,13 +27,13 @@ class SudokuMatrix
     vector<vector<int>> toIntMatrix() const;
     vector<vector<CellData>> toCellDataMatrix() const;
 
-    void saveData() { m_tmpData = m_data; }
-    void restoreData() { m_data = m_tmpData; }
+    void saveData() { m_snapShot = m_data; }
+    void restoreData() { m_data = m_snapShot; }
 
     void applySolution(const vector<vector<int>>& sol);
 
     void setGivens(const reader::SudokuGrid &clues);
   private:
     vector<vector<CellData>> m_data;
-    vector<vector<CellData>> m_tmpData;
+    vector<vector<CellData>> m_snapShot;
 };

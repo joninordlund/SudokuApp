@@ -8,7 +8,8 @@ using namespace std;
 class SolutionSet
 {
   public:
-    SolutionSet() : m_index(0), m_solutions{{}}{}
+    SolutionSet()
+        : m_index(0), m_maxSolCount(64), m_solutions{{}} {}
 
     void updateSolutions(const Matrix &matrix, int maxCount = 64);
     Matrix getRandomSudoku(const Matrix &matrix);
@@ -16,10 +17,11 @@ class SolutionSet
     Matrix prev();
 
     int count() const { return m_solutions.size(); }
+    int maxCount() const { return m_maxSolCount; }
 
   private:
     SudokuSolver m_solver;
-    vector<vector<vector<int>>> m_solutions;
+    vector<Matrix> m_solutions;
     int m_index;
     int m_maxSolCount;
 };
