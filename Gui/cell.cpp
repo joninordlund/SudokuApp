@@ -7,7 +7,9 @@ Cell::Cell(int row, int col, QWidget* parent) :
     m_row(row),
     m_col(col),
     m_isSelected(false),
-    m_isCursor(false)
+    m_isCursor(false),
+    m_centerMarks(0),
+    m_cornerMarks(0)
 {
     setFixedSize(60, 60);
     setFocusPolicy(Qt::StrongFocus);
@@ -84,5 +86,42 @@ void Cell::paintEvent(QPaintEvent *event)
 
         painter.setPen(color);
         painter.drawText(rect(), Qt::AlignCenter, QString::number(m_digit));
+    }
+    drawCenterMarks(painter);
+    drawCornerMarks(painter);
+}
+
+void Cell::drawCenterMarks(QPainter& painter)
+{
+    QString text;
+    for (int i = 1; i <= 9; ++i)
+    {
+        if (m_centerMarks & (1 << (i - 1)))
+        {
+            text += QString::number(i);
+        }
+    }
+    // Piirretään text solun keskelle kursiivilla
+    painter.setFont(QFont("Arial", height() / 4, QFont::Normal, true));
+    painter.drawText(rect(), Qt::AlignCenter, text);
+}
+
+void Cell::drawCornerMarks(QPainter& painter)
+{
+    painter.setPen(Qt::darkGray);
+    painter.setFont(QFont("Arial", height() / 5)); // Skaalautuva fontti
+
+    int w = width() / 3;
+    int h = height() / 3;
+
+    for (int i = 1; i <= 9; ++i)
+    {
+        if (m_cornerMarks & (1 << (i - 1)))
+        { // Bittitarkistus
+            int row = (i - 1) / 3;
+            int col = (i - 1) % 3;
+            QRect subRect(col * w, row * h, w, h);
+            painter.drawText(subRect, Qt::AlignCenter, QString::number(i));
+        }
     }
 }

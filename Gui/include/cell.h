@@ -16,8 +16,13 @@ class Cell : public QWidget
     int row() const { return m_row; }
     int col() const { return m_col; }
     int digit() const { return m_digit; }
-    void clearCornerMarks() { m_cornerMarks.clear(); }
-    void clearCenterMarks() { m_centerMarks.clear(); }
+    void setCornerMarks(uint16_t marks) { m_cornerMarks = marks; }
+    void setCenterMarks(uint16_t marks) { m_centerMarks = marks; }
+    void clearCornerMarks() { m_cornerMarks = 0; }
+    void clearCenterMarks() { m_centerMarks = 0; }
+
+    void drawCenterMarks(QPainter& painter);
+    void drawCornerMarks(QPainter& painter);
 
   protected:
     void mousePressEvent(QMouseEvent* event);
@@ -25,8 +30,8 @@ class Cell : public QWidget
 
   private:
     int m_digit;
-    QSet<int> m_cornerMarks;
-    QSet<int> m_centerMarks;
+    uint16_t m_cornerMarks;
+    uint16_t m_centerMarks;
     int m_row;
     int m_col;
     bool m_isGiven;

@@ -51,16 +51,20 @@ void Grid::updateUI()
     for (Cell* cell : m_cells)
     {
         CellData data = m_board.data(cell->row(), cell->col());
-        cell->setDigit(data.value, data.isGiven);
+        cell->setDigit(data.digit, data.isGiven);
+        cell->setCenterMarks(data.centerMarks);
+        cell->setCornerMarks(data.cornerMarks);
     }
 }
 
-void Grid::applyStateChange(int x, int y, int digit, bool isGiven)
+void Grid::applyStateChange(int x, int y, const CellData& newData)
 {
     Cell* cell = m_cells[x * 9 + y];
-    m_board.setDigit(x, y, digit, isGiven);
-
-    cell->setDigit(digit, isGiven);
+    m_board.setCellData(x, y, newData);
+    cell->setDigit(newData.digit, newData.isGiven);
+    cell->setCornerMarks(newData.cornerMarks);
+    cell->setCenterMarks(newData.centerMarks);
+    cell->update();
 }
 
 void Grid::newSudoku(const reader::SudokuGrid& grid)
@@ -134,16 +138,22 @@ void Grid::keyPressEvent(QKeyEvent* event)
         return;
     }
 
-    bool alt = event->modifiers() & Qt::AltModifier;     // corner pencil marks
-    bool shift = event->modifiers() & Qt::ShiftModifier; // center pencil marks
-    bool ctrl = event->modifiers() & Qt::ControlModifier;
+    bool alt = event->modifiers() & Qt::AltModifier; // corner pencil marks
+    bool shift = event->modifiers() & Qt::ShiftModifier;
+    bool ctrl = event->modifiers() & Qt::ControlModifier; // center pencil marks
 
     int key = event->key();
 
-    int digit = key - Qt::Key_0;
-    if (digit >= 1 && digit <= 9)
+    int digit = -1;
+
+    if (key >= Qt::Key_1 && key <= Qt::Key_9)
     {
-        enterDigit(digit);
+        digit = key - Qt::Key_1 + 1;
+    }
+    if (digit != -1)
+    {
+        EMarkType type = ctrl ? CENTERMARK : (alt ? CORNERMARK : DIGIT);
+        enterDigit(digit, type);
         return;
     }
 
@@ -213,6 +223,7 @@ void Grid::onShowSolution()
     m_isPeeking = true;
     m_board.saveData();
     m_board.clearUserDigits();
+
     m_solutionSet.updateSolutions(m_board.toIntMatrix());
     if (m_solutionSet.count() > 0)
     {
@@ -283,43 +294,68 @@ void Grid::handleHistoryChanged()
     emit solutionCountChanged(m_solutionSet.count(), m_solutionSet.maxCount());
 }
 
-void Grid::enterDigit(int digit)
+void Grid::enterDigit(int digit, EMarkType type)
 {
-    changeCell(digit, m_editMode == EDIT_CLUES);
+    if (m_editMode == EDIT_CLUES)
+    {
+        type = DIGIT;
+    }
+    changeCell(digit, type, m_editMode == EDIT_CLUES);
 }
 
 void Grid::deleteCell()
 {
-    changeCell(0, false);
+    changeCell(0, DIGIT, false);
 }
 
-void Grid::changeCell(int digit, bool isGiven)
+void Grid::changeCell(int digit, EMarkType type, bool isGiven)
 {
     vector<CellChange> command;
     for (Cell* cell : as_const(m_selectedCellSet))
     {
-        CellChange cc;
         if (!cell->isGiven() || m_editMode == EDIT_CLUES)
         {
             int x = cell->row();
             int y = cell->col();
-            if (m_board.digit(x, y) != digit)
+            CellData oldState = m_board.data(x, y);
+            CellData newState = handleNumberInput(x, y, digit, type);
+            if (oldState == newState)
             {
-                // save old state for the history
-                cc.x = x;
-                cc.y = y;
-                cc.oldState.digit = m_board.digit(x, y);
-                cc.oldState.isGiven = m_board.isGiven(x, y);
-                applyStateChange(x, y, digit, isGiven);
-                // set new state for the history
-                cc.newState.digit = digit;
-                cc.newState.isGiven = isGiven;
-                command.push_back(cc);
+                continue;
             }
+            applyStateChange(x, y, newState);
+            command.push_back(CellChange{x, y, oldState, newState});
         }
     }
     if (!command.empty())
     {
         m_history.setNewCommand(command);
     }
+}
+
+CellData Grid::handleNumberInput(int x, int y, int digit, EMarkType type)
+{
+    CellData newState = m_board.data(x, y);
+    switch (type)
+    {
+        case DIGIT:
+            newState.digit = digit;
+            newState.isGiven = (m_editMode == EDIT_CLUES);
+            newState.cornerMarks = 0;
+            newState.centerMarks = 0;
+            break;
+        case CORNERMARK:
+            if (newState.digit == 0)
+            {
+                newState.cornerMarks ^= (1 << (digit - 1));
+            }
+            break;
+        case CENTERMARK:
+            if (newState.digit == 0)
+            {
+                newState.centerMarks ^= (1 << (digit - 1));
+            }
+            break;
+    };
+    return newState;
 }

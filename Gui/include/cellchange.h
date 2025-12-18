@@ -3,16 +3,23 @@
 #include <cstdint>
 using namespace std;
 
-struct State {
-    int digit;
-    bool isGiven;
-    uint16_t centerMarks;
-    uint16_t cornerMarks;
+struct CellData {
+    int digit = 0;
+    bool isGiven = false;
+    uint16_t centerMarks = 0;
+    uint16_t cornerMarks = 0;
+
+    bool operator==(const CellData& other) const {
+        return digit == other.digit &&
+               isGiven == other.isGiven &&
+               centerMarks == other.centerMarks &&
+               cornerMarks == other.cornerMarks;
+    }
 };
 
 struct CellChange {
     int x;
     int y;
-    State oldState;
-    State newState;
+    CellData oldState;
+    CellData newState;
 };

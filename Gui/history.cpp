@@ -14,7 +14,7 @@ void History::undo()
         item = m_past.back();
         for (const auto& cc : item)
         {
-            m_grid->applyStateChange(cc.x, cc.y, cc.oldState.digit, cc.oldState.isGiven);
+            m_grid->applyStateChange(cc.x, cc.y, cc.oldState);
         }
         m_future.push_back(item);
         m_past.pop_back();
@@ -33,7 +33,7 @@ void History::redo()
         item = m_future.back();
         for (const auto& cc : item)
         {
-            m_grid->applyStateChange(cc.x, cc.y, cc.newState.digit, cc.newState.isGiven);
+            m_grid->applyStateChange(cc.x, cc.y, cc.newState);
         }
         m_past.push_back(item);
         m_future.pop_back();
