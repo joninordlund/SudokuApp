@@ -16,6 +16,7 @@ enum EEditMode {
 
 enum EMarkType {
     DIGIT = 1,
+    DELETE,
     CENTERMARK,
     CORNERMARK
 };
@@ -33,6 +34,8 @@ class Grid : public QWidget {
     // void fromMatrix(const vector<vector<CellData>>& matrix);
     void applyStateChange(int x, int y, const CellData& data);
     History* getHistory() { return &m_history; }
+    SudokuBoard& getBoard() { return m_board; }
+    void updateUI();
 
   public slots:
     void newSudoku(const reader::SudokuGrid& grid);
@@ -61,7 +64,6 @@ class Grid : public QWidget {
     SolutionSet m_solutionSet;
     History m_history;
 
-    void updateUI();
     void enterDigit(int digit, EMarkType type);
 
     void deleteCell();
@@ -69,6 +71,8 @@ class Grid : public QWidget {
     void changeCell(int digit, EMarkType type, bool isGiven);
 
     CellData handleNumberInput(int x, int y, int digit, EMarkType inputType);
+
+    void reloadStyle();
 
   protected:
     void keyPressEvent(QKeyEvent* event);

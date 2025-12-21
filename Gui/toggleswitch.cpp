@@ -2,15 +2,15 @@
 #include <QPainter>
 #include <QMouseEvent>
 
-ToggleSwitch::ToggleSwitch(QWidget *parent)
-    : QWidget(parent),
+ToggleSwitch::ToggleSwitch(QWidget* parent) :
+    QWidget(parent),
     m_checked(false),
     m_position(0),
     m_bgColorUnchecked(QColor(0xcccccc)),
     m_bgColorChecked(QColor(0x4CAF50)),
     m_circleColor(Qt::white),
-    m_width(54),
-    m_height(28),
+    m_width(40),  // 54
+    m_height(24), // 28
     m_margin(3)
 {
     setFixedSize(m_width, m_height);

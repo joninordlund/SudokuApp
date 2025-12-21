@@ -8,6 +8,11 @@ add_executable(SudokuApp
     include/sudokuimage.h sudokuimage.cpp
     include/history.h history.cpp
     include/cellchange.h
+    resources.qrc
+    include/sudokuserializer.h sudokuserializer.cpp
+    include/countlabel.h countlabel.cpp
+    style.qss
+
 
 )
 

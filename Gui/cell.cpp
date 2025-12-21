@@ -101,7 +101,6 @@ void Cell::drawCenterMarks(QPainter& painter)
             text += QString::number(i);
         }
     }
-    // Piirretään text solun keskelle kursiivilla
     painter.setFont(QFont("Arial", height() / 4, QFont::Normal, true));
     painter.drawText(rect(), Qt::AlignCenter, text);
 }
@@ -109,7 +108,7 @@ void Cell::drawCenterMarks(QPainter& painter)
 void Cell::drawCornerMarks(QPainter& painter)
 {
     painter.setPen(Qt::darkGray);
-    painter.setFont(QFont("Arial", height() / 5)); // Skaalautuva fontti
+    painter.setFont(QFont("Arial", height() / 5));
 
     int w = width() / 3;
     int h = height() / 3;
@@ -117,7 +116,7 @@ void Cell::drawCornerMarks(QPainter& painter)
     for (int i = 1; i <= 9; ++i)
     {
         if (m_cornerMarks & (1 << (i - 1)))
-        { // Bittitarkistus
+        {
             int row = (i - 1) / 3;
             int col = (i - 1) % 3;
             QRect subRect(col * w, row * h, w, h);

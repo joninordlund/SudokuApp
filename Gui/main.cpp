@@ -1,21 +1,9 @@
-#include <vector>
+#include "mainwindow.h"
 #include <QApplication>
+#include <QFontDatabase>
+#include <QFrame>
 #include <QGridLayout>
 #include <QPushButton>
-#include <QFrame>
-#include "mainwindow.h"
-
-const std::vector<std::vector<int>> sudoku{
-    {0, 0, 0, 2, 0, 5, 0, 0, 0},
-    {0, 0, 8, 0, 0, 0, 2, 0, 0},
-    {0, 5, 0, 8, 0, 9, 0, 1, 0},
-    {9, 0, 7, 0, 0, 0, 8, 0, 6},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {6, 0, 2, 0, 0, 0, 3, 0, 9},
-    {0, 4, 0, 1, 0, 8, 0, 3, 0},
-    {0, 0, 6, 0, 0, 0, 5, 0, 0},
-    {0, 0, 0, 5, 0, 4, 0, 0, 0}};
-
 
 /*
 int main(int argc, char *argv[])
@@ -95,11 +83,27 @@ int main(int argc, char *argv[])
     return app.exec();
 }*/
 
-
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    // Lataa fontit resurssista
+    int id1 = QFontDatabase::addApplicationFont(":/fonts/fonts/Roboto-Regular.ttf");
+    int id2 = QFontDatabase::addApplicationFont(":/fonts/fonts/Roboto-Bold.ttf");
+
+    // Tarkista onnistuiko
+    if (id1 == -1 || id2 == -1)
+    {
+        qWarning() << "Fontin lataus epäonnistui!";
+    }
+    else
+    {
+        qDebug() << "Roboto-fontti ladattu onnistuneesti!";
+
+        // Näytä ladatut fontit
+        QStringList families = QFontDatabase::applicationFontFamilies(id1);
+        qDebug() << "Ladatut fonttiperheet:" << families;
+    }
     MainWindow window;
     window.show();
 

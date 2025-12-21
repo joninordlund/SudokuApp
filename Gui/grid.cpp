@@ -1,7 +1,11 @@
 #include "grid.h"
 #include "cellchange.h"
+#include "sudokuserializer.h"
 #include "sudokusolver.h"
 
+#include <QApplication>
+#include <QDir>
+#include <QFile>
 #include <QFrame>
 #include <QGridLayout>
 #include <QKeyEvent>
@@ -19,9 +23,10 @@ Grid::Grid(QWidget* parent) :
     m_dirty(false),
     m_editMode(SOLVE)
 {
+    setFixedSize(540, 540);
     QGridLayout* layout = new QGridLayout(this);
     layout->setSpacing(0);
-    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     for (int i = 0; i < 81; i++)
     {
@@ -35,16 +40,6 @@ Grid::Grid(QWidget* parent) :
     updateUI();
     grabKeyboard();
 }
-
-// vector<vector<CellData>> Grid::toMatrix()
-// {
-//     vector<vector<CellData>> matrix(9, vector<CellData>(9, CellData{}));
-//     for (const Cell* cell : m_cells)
-//     {
-//         matrix[cell->row()][cell->col()] = CellData{cell->digit(), cell->isGiven()};
-//     }
-//     return matrix;
-// }
 
 void Grid::updateUI()
 {
@@ -160,6 +155,7 @@ void Grid::keyPressEvent(QKeyEvent* event)
     if (key == Qt::Key_Delete || key == Qt::Key_Backspace)
     {
         deleteCell();
+        return;
     }
     if (key == Qt::Key_Escape)
     {
@@ -187,9 +183,12 @@ void Grid::keyPressEvent(QKeyEvent* event)
                 break;
             case Qt::Key_Up:
                 newRow = max(0, row - 1);
+                // SudokuSerializer::loadFromFile("kala", m_board, m_history);
                 break;
             case Qt::Key_Down:
                 newRow = min(8, row + 1);
+                reloadStyle();
+                // SudokuSerializer::saveToFile("kala", m_board, m_history);
                 break;
             default:
                 return;
@@ -215,6 +214,11 @@ void Grid::keyPressEvent(QKeyEvent* event)
         m_lastSelectedCell->setCursor(false);
         m_lastSelectedCell = nextCell;
         m_lastSelectedCell->setCursor(true);
+    }
+    if (event->key() == Qt::Key_F5)
+    {
+        // reloadStyle();
+        SudokuSerializer::saveToFile("kala", m_board, m_history);
     }
 }
 
@@ -305,7 +309,7 @@ void Grid::enterDigit(int digit, EMarkType type)
 
 void Grid::deleteCell()
 {
-    changeCell(0, DIGIT, false);
+    changeCell(0, DELETE, false);
 }
 
 void Grid::changeCell(int digit, EMarkType type, bool isGiven)
@@ -344,6 +348,12 @@ CellData Grid::handleNumberInput(int x, int y, int digit, EMarkType type)
             newState.cornerMarks = 0;
             newState.centerMarks = 0;
             break;
+        case DELETE:
+            newState.digit = 0;
+            newState.isGiven = false;
+            newState.cornerMarks = 0;
+            newState.centerMarks = 0;
+            break;
         case CORNERMARK:
             if (newState.digit == 0)
             {
@@ -359,3 +369,28 @@ CellData Grid::handleNumberInput(int x, int y, int digit, EMarkType type)
     };
     return newState;
 }
+
+void Grid::reloadStyle()
+{
+#ifdef QT_DEBUG
+    // Selvitä tämän cpp-tiedoston sijainti ja etsi style.qss sieltä
+    QString sourcePath = QFileInfo(__FILE__).absolutePath();
+    QFile file(sourcePath + "/style.css"); // Mukautetaan projektisi rakenteeseen
+    qDebug() << "Source: " << sourcePath;
+#else
+    QFile styleFile(":/style.qss");
+#endif
+    if (file.open(QFile::ReadOnly))
+    {
+        QString styleSheet = QLatin1String(file.readAll());
+        qApp->setStyleSheet(styleSheet);
+        file.close();
+    }
+}
+#ifdef QT_DEBUG
+// Selvitä tämän cpp-tiedoston sijainti ja etsi style.qss sieltä
+QString sourcePath = QFileInfo(__FILE__).absolutePath();
+QFile styleFile(sourcePath + "/../style.qss"); // Mukautetaan projektisi rakenteeseen
+#else
+QFile styleFile(":/style.qss");
+#endif
