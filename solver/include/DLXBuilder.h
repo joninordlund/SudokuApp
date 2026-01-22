@@ -1,9 +1,10 @@
 #pragma once
 
-#include <vector>
-#include <iostream>
-#include <string>
 #include "sudokusolver.h"
+#include <iostream>
+#include <random>
+#include <string>
+#include <vector>
 
 using namespace std;
 using Matrix = vector<vector<int>>;
@@ -28,12 +29,12 @@ struct Node
 class DLXBuilder
 {
 public:
-    DLXBuilder(Matrix mat) : m_matrix(mat), m_maxCount(0)
-    {
-        M = m_matrix.size();
-        N = m_matrix[0].size();
-        m_solution.resize(M);
-    };
+  DLXBuilder(Matrix mat, int maxSolCount = 64)
+      : m_matrix(mat), m_maxCount(maxSolCount), m_rndGen(std::random_device{}()) {
+      M = m_matrix.size();
+      N = m_matrix[0].size();
+      m_solution.resize(M);
+  };
     vector<vector<int>> findSolutions(int maxCount);
     void setRandomMode(bool enabled) { m_randomMode = enabled; }
 
@@ -46,6 +47,7 @@ private:
     vector<vector<int>> m_allSolutions;
     int m_maxCount;
     bool m_randomMode;
+    std::mt19937 m_rndGen;
 
     void build();
     void search(int x);

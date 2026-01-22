@@ -289,6 +289,7 @@ void Grid::onClearSolution()
 
 void Grid::onRandom()
 {
+    qDebug() << "RANSKU";
 }
 
 void Grid::handleHistoryChanged()

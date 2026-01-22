@@ -12,12 +12,14 @@ class SolutionSet
         : m_index(0), m_maxSolCount(64), m_solutions{{}} {}
 
     void updateSolutions(const Matrix &matrix, int maxCount = 64);
-    Matrix getRandomSudoku(const Matrix &matrix);
+    vector<Matrix> getRandomSudokuSet(const Matrix& matrix, int count);
     Matrix next();
     Matrix prev();
 
     int count() const { return m_solutions.size(); }
     int maxCount() const { return m_maxSolCount; }
+
+    Matrix generate(int cellCount);
 
   private:
     SudokuSolver m_solver;

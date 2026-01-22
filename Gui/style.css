@@ -7,7 +7,7 @@ QPushButton {
     color: ghostwhite;
     border: none;
     border-radius: 5px;
-    padding: 10px 20px;
+    padding: 6px 14px;
     font-size: 16px;
     font-weight: bold;
     font-family: 'Roboto';
@@ -18,6 +18,10 @@ QPushButton#colorRe{
 }
 
 QPushButton#colorGree{
+    background-color: #1d9c09;
+}
+
+QLabel#bottomq{
     background-color: #1d9c09;
 }
 

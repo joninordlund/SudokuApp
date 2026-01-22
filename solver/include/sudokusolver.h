@@ -11,5 +11,5 @@ class SudokuSolver
     SudokuSolver() {}
     pair<Matrix, vector<tuple<int, int, int>>> makeSudokuMatrix(const Matrix &sudoku);
     vector<Matrix> getSolutions(const Matrix &grid, bool random, int maxCount);
-    Matrix getRandomSudoku(const Matrix &sudoku);
+    vector<Matrix> getRandomSudokuSet(const Matrix& sudoku, int count);
 };

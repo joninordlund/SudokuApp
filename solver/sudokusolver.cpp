@@ -65,8 +65,8 @@ vector<Matrix> SudokuSolver::getSolutions(const Matrix &sudoku, bool random, int
     return res;
 }
 
-Matrix SudokuSolver::getRandomSudoku(const Matrix &sudoku)
+vector<Matrix> SudokuSolver::getRandomSudokuSet(const Matrix& sudoku, int count)
 {
-    vector<Matrix> sol = getSolutions(sudoku, true, 1);
-    return sol[0];
+    vector<Matrix> sol = getSolutions(sudoku, true, count);
+    return sol;
 }

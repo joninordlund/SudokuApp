@@ -216,16 +216,14 @@ void DLXBuilder::search(int x)
         r = m_nodes[r].down;
     }
 
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(rowCandidates.begin(), rowCandidates.end(), g);
+    std::shuffle(rowCandidates.begin(), rowCandidates.end(), m_rndGen);
 
-    for (int r_shuffled : rowCandidates)
+    for (int r : rowCandidates)
     {
-        m_solution[x] = m_nodes[r_shuffled].row;
+        m_solution[x] = m_nodes[r].row;
 
-        int j = r_shuffled + 1;
-        while (j != r_shuffled)
+        int j = r + 1;
+        while (j != r)
         {
             if (m_nodes[j].top < 0) // spacer
             {
@@ -238,8 +236,8 @@ void DLXBuilder::search(int x)
 
         search(x + 1);
 
-        int t = r_shuffled - 1;
-        while (t != r_shuffled)
+        int t = r - 1;
+        while (t != r)
         {
             if (m_nodes[t].top < 0) // spacer
             {
@@ -258,13 +256,8 @@ void DLXBuilder::search(int x)
     uncover(col);
 }
 
-int DLXBuilder::chooseCol()
-{
-    return chooseColMRV();
-}
-
 // choose the first column with minimum length (MRV heuristic)
-int DLXBuilder::chooseColMRV()
+int DLXBuilder::chooseCol()
 {
     int best = -1;
     int bestLen = numeric_limits<int>::max();
