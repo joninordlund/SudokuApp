@@ -21,8 +21,8 @@ class Cell : public QWidget
     void clearCornerMarks() { m_cornerMarks = 0; }
     void clearCenterMarks() { m_centerMarks = 0; }
 
-    void drawCenterMarks(QPainter& painter);
-    void drawCornerMarks(QPainter& painter);
+    void drawCenterMarks(QPainter& painter, const QRect& targetRect);
+    void drawCornerMarks(QPainter& painter, const QRect& targetRect);
 
   protected:
     void mousePressEvent(QMouseEvent* event);

@@ -1,18 +1,21 @@
 #include "mainwindow.h"
 #include "grid.h"
 #include "sudokuserializer.h"
+#include <QApplication>
 #include <QCheckBox>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QVBoxLayout>
 
+const int areaSize = 630;
+// const int areaSize = 540;
+
 MainWindow::MainWindow(QWidget* parent) :
-    QWidget{parent}
+    QWidget{parent}, m_difficulty(1), m_grid(nullptr)
 {
-    setFixedSize(1380, 640);
-
+    setFixedSize(1560, 740);
+    // setFixedSize(1380, 640);
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-
     QWidget* centerArea = new QWidget;
     QHBoxLayout* centerLayout = new QHBoxLayout(centerArea);
     centerLayout->setSpacing(20);
@@ -26,12 +29,14 @@ MainWindow::MainWindow(QWidget* parent) :
     mainLayout->addWidget(centerArea);
     mainLayout->addLayout(createBottomBar());
 
+    onEditModeToggled(m_editModeToggle->isChecked());
+
     connectSignals();
 }
 
 QWidget* MainWindow::createLeftControls()
 {
-    const int spacing = 10;
+    const int spacing = 7;
     QWidget* controlArea = new QWidget;
     controlArea->setFixedWidth(90);
     QVBoxLayout* layout = new QVBoxLayout(controlArea);
@@ -87,11 +92,24 @@ QWidget* MainWindow::createLeftControls()
     // Clear and Random buttons
     m_clearBtn = new QPushButton("Clear");
     m_randomBtn = new QPushButton("Random");
-    m_clearBtn->setObjectName("colorRed");
+    m_generateBtn = new QPushButton("Generate");
+    // QWidget* starWidget = new QWidget;
+    QHBoxLayout* starLayout = setupStars();
+
+    starLayout->setContentsMargins(0, 0, 0, 0);
+
+    // m_clearBtn->setObjectName("colorRed");
     // m_randomBtn->setObjectName("colorRed");
     layout->addWidget(m_clearBtn);
     layout->addWidget(m_randomBtn);
-    layout->addSpacing(spacing);
+
+    QVBoxLayout* genGroup = new QVBoxLayout();
+    genGroup->setSpacing(2);
+    genGroup->addWidget(m_generateBtn);
+    genGroup->addLayout(starLayout);
+    layout->addLayout(genGroup);
+    updateStars(m_difficulty);
+    // layout->addSpacing(spacing);
 
     // Solutions section
     QLabel* solLbl = new QLabel("Solutions");
@@ -120,13 +138,13 @@ QWidget* MainWindow::createLeftControls()
     arrowLayout->setContentsMargins(0, 0, 0, 0);
     arrowLayout->setSpacing(5);
 
-    QPushButton* leftArrowBtn = new QPushButton("←");
-    QPushButton* rightArrowBtn = new QPushButton("→");
-    leftArrowBtn->setFixedSize(35, 35);
-    rightArrowBtn->setFixedSize(35, 35);
+    m_leftBrowseBtn = new QPushButton("←");
+    m_rightBrowseBtn = new QPushButton("→");
+    m_leftBrowseBtn->setFixedSize(35, 35);
+    m_rightBrowseBtn->setFixedSize(35, 35);
 
-    arrowLayout->addWidget(leftArrowBtn);
-    arrowLayout->addWidget(rightArrowBtn);
+    arrowLayout->addWidget(m_leftBrowseBtn);
+    arrowLayout->addWidget(m_rightBrowseBtn);
     layout->addWidget(arrowWidget);
 
     // Puzzle count
@@ -146,7 +164,7 @@ QWidget* MainWindow::createLeftControls()
 QWidget* MainWindow::createSudokuArea()
 {
     QWidget* leftSquare = new QWidget;
-    leftSquare->setFixedSize(540, 540);
+    leftSquare->setFixedSize(areaSize, areaSize);
 
     QHBoxLayout* layout = new QHBoxLayout(leftSquare);
     m_grid = new Grid(leftSquare);
@@ -159,7 +177,7 @@ QWidget* MainWindow::createSudokuArea()
 QWidget* MainWindow::createImageArea()
 {
     QFrame* rightSquare = new QFrame;
-    rightSquare->setFixedSize(540, 540);
+    rightSquare->setFixedSize(areaSize, areaSize);
     rightSquare->setFrameShape(QFrame::Box);
     rightSquare->setLineWidth(3);
 
@@ -207,8 +225,8 @@ QHBoxLayout* MainWindow::createBottomBar()
 
     m_solCountLbl = new QLabel("Solution count: ");
 
-    QLabel* editModeLabel = new QLabel("Edit mode:");
-    m_editModeValueLbl = new QLabel("Solve"); // Tai "Edit clues"
+    QLabel* editModeLabel = new QLabel("Mode:");
+    m_editModeValueLbl = new QLabel("Solve");
 
     buttonLayout->addWidget(m_solCountLbl);
     buttonLayout->addSpacing(40);
@@ -217,6 +235,44 @@ QHBoxLayout* MainWindow::createBottomBar()
     buttonLayout->addStretch();
 
     return buttonLayout;
+}
+
+QHBoxLayout* MainWindow::setupStars()
+{
+    QHBoxLayout* starLayout = new QHBoxLayout();
+
+    for (int i = 1; i <= 5; i++)
+    {
+        QToolButton* star = new QToolButton();
+        star->setText("\u2605"); // star
+        star->setCheckable(true);
+        m_starButtons.append(star);
+        starLayout->addWidget(star);
+
+        connect(star, &QToolButton::clicked, this, [=]()
+                { updateStars(i); });
+    }
+    return starLayout;
+}
+
+void MainWindow::updateStars(int level)
+{
+    m_difficulty = level;
+    for (int i = 0; i < 5; i++)
+    {
+        if (i < level)
+        {
+            m_starButtons[i]->setStyleSheet("color: gold; font-size: 20px; border: none;");
+        }
+        else
+        {
+            m_starButtons[i]->setStyleSheet("color: gray; font-size: 20px; border: none;");
+        }
+    }
+    if (m_grid)
+    {
+        m_grid->setDifficulty(level);
+    }
 }
 
 void MainWindow::connectSignals()
@@ -228,6 +284,7 @@ void MainWindow::connectSignals()
     connect(m_randomBtn, &QPushButton::clicked, m_grid, &Grid::onRandom);
     connect(m_undoBtn, &QPushButton::clicked, m_grid, &Grid::onUndo);
     connect(m_redoBtn, &QPushButton::clicked, m_grid, &Grid::onRedo);
+    connect(m_generateBtn, &QPushButton::clicked, this, &MainWindow::onGenerate);
     connect(m_editModeToggle, &ToggleSwitch::toggled, this, &MainWindow::onEditModeToggled);
     connect(m_grid->getHistory(), &History::historyStateChanged, this, &MainWindow::updateUndoRedoButtons);
     connect(m_grid, &Grid::solutionCountChanged, this, &MainWindow::updateCountLabel);
@@ -235,10 +292,24 @@ void MainWindow::connectSignals()
     connect(m_saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveRequested);
 }
 
+void MainWindow::onGenerate()
+{
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    m_grid->onGenerate();
+    QApplication::restoreOverrideCursor();
+}
+
 void MainWindow::onEditModeToggled(bool checked)
 {
     m_editModeValueLbl->setText(checked ? "Edit clues" : "Solve");
     m_grid->onEditModeChanged(checked);
+    updateUI(checked);
+}
+
+void MainWindow::updateUI(bool checked)
+{
+    m_leftBrowseBtn->setEnabled(!checked);
+    m_rightBrowseBtn->setEnabled(!checked);
 }
 
 void MainWindow::updateUndoRedoButtons(bool canUndo, bool canRedo)

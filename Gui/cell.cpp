@@ -11,7 +11,7 @@ Cell::Cell(int row, int col, QWidget* parent) :
     m_centerMarks(0),
     m_cornerMarks(0)
 {
-    setFixedSize(60, 60);
+    setFixedSize(70, 70);
     setFocusPolicy(Qt::StrongFocus);
 }
 
@@ -44,83 +44,131 @@ void Cell::mousePressEvent(QMouseEvent *event)
     bool ctrl = event->modifiers() & Qt::ControlModifier;
     emit cellClicked(this, ctrl);
 }
-
-void Cell::paintEvent(QPaintEvent *event)
+void Cell::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
     if (m_isSelected)
     {
-        painter.fillRect(rect(), Qt::lightGray);
+        painter.fillRect(rect(), QColor(220, 230, 255));
     }
     else
     {
         painter.fillRect(rect(), Qt::white);
     }
 
-    painter.setPen(QPen(Qt::black, 1));
+    painter.setPen(QPen(Qt::lightGray, 1));
     painter.drawRect(rect().adjusted(0, 0, -1, -1));
 
-    int thickLineWidth = 4;
+    painter.setPen(Qt::NoPen);
+    int thick = 3;
+
     if (m_col % 3 == 0)
     {
-        painter.fillRect(QRect(0, 0, thickLineWidth, height()), Qt::black);
+        painter.fillRect(0, 0, thick, height(), Qt::black);
     }
+
     if (m_col == 8)
     {
-        painter.fillRect(QRect(width() - thickLineWidth, 0, thickLineWidth, height()), Qt::black);
+        painter.fillRect(width() - thick, 0, thick, height(), Qt::black);
     }
 
     if (m_row % 3 == 0)
     {
-        painter.fillRect(QRect(0, 0, width(), thickLineWidth), Qt::black);
+        painter.fillRect(0, 0, width(), thick, Qt::black);
     }
     if (m_row == 8)
     {
-        painter.fillRect(QRect(0, height() - thickLineWidth, width(), thickLineWidth), Qt::black);
+        painter.fillRect(0, height() - thick, width(), thick, Qt::black);
     }
 
-    painter.setFont(QFont("Arial", 28, m_isGiven ? 700 : 500));
+    QRect textRect = rect().adjusted(thick, thick, -thick, -thick);
+
     if (m_digit != 0)
     {
-        QColor color = m_isGiven ? Qt::black : Qt::red;
-
-        painter.setPen(color);
-        painter.drawText(rect(), Qt::AlignCenter, QString::number(m_digit));
+        painter.setFont(QFont("Arial", 26, m_isGiven ? QFont::Bold : QFont::Normal));
+        painter.setPen(m_isGiven ? Qt::black : QColor(0, 102, 204));
+        painter.drawText(textRect, Qt::AlignCenter, QString::number(m_digit));
     }
-    drawCenterMarks(painter);
-    drawCornerMarks(painter);
+    else
+    {
+        drawCenterMarks(painter, textRect);
+        drawCornerMarks(painter, textRect);
+    }
 }
 
-void Cell::drawCenterMarks(QPainter& painter)
+void Cell::drawCenterMarks(QPainter& painter, const QRect& targetRect)
 {
+    if (m_digit != 0)
+    {
+        return;
+    }
     QString text;
+    int count = 0;
     for (int i = 1; i <= 9; ++i)
     {
         if (m_centerMarks & (1 << (i - 1)))
         {
             text += QString::number(i);
+            count++;
         }
     }
-    painter.setFont(QFont("Arial", height() / 4, QFont::Normal, true));
-    painter.drawText(rect(), Qt::AlignCenter, text);
+
+    if (count == 0)
+    {
+        return;
+    }
+
+    int fontSize = height() / 5;
+    if (count > 6)
+    {
+        fontSize = height() / 6;
+    }
+    if (count > 7)
+    {
+        fontSize = height() / 7;
+    }
+
+    painter.setPen(Qt::black);
+    painter.setFont(QFont("Arial", fontSize, QFont::Normal, true));
+    painter.drawText(targetRect, Qt::AlignCenter, text);
 }
 
-void Cell::drawCornerMarks(QPainter& painter)
+void Cell::drawCornerMarks(QPainter& painter, const QRect& targetRect)
 {
-    painter.setPen(Qt::darkGray);
-    painter.setFont(QFont("Arial", height() / 5));
+    if (m_digit != 0)
+    {
+        return;
+    }
 
-    int w = width() / 3;
-    int h = height() / 3;
-
+    painter.setPen(Qt::black);
+    QVector<int> activeMarks;
     for (int i = 1; i <= 9; ++i)
     {
         if (m_cornerMarks & (1 << (i - 1)))
         {
-            int row = (i - 1) / 3;
-            int col = (i - 1) % 3;
-            QRect subRect(col * w, row * h, w, h);
-            painter.drawText(subRect, Qt::AlignCenter, QString::number(i));
+            activeMarks.append(i);
         }
+    }
+
+    if (activeMarks.isEmpty())
+    {
+        return;
+    }
+
+    static const QPointF positions[] = {
+        {0, 0}, {2, 0}, {0, 2}, {2, 2}, {1, 0}, {1, 2}, {0, 1}, {2, 1}, {1, 1}};
+    int w = targetRect.width() / 3;
+    int h = targetRect.height() / 3;
+    painter.setFont(QFont("Arial", h * 0.8));
+
+    for (int i = 0; i < activeMarks.size() && i < 9; ++i)
+    {
+        int posX = targetRect.x() + (positions[i].x() * w);
+        int posY = targetRect.y() + (positions[i].y() * h);
+
+        QRect subRect(posX, posY, w, h);
+        painter.drawText(subRect, Qt::AlignCenter, QString::number(activeMarks[i]));
     }
 }

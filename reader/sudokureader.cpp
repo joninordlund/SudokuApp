@@ -40,7 +40,8 @@ void SudokuReader::setImage(const cv::Mat& img)
 
 std::pair <reader::SudokuGrid, cv::Mat> SudokuReader::getSudokuCells(const cv::Mat& processedImg)
 {
-    reader::SudokuGrid grid;
+    // reader::SudokuGrid grid;
+    reader::SudokuGrid grid(9, std::vector<int>(9, 0));
     cv::Mat cell;
 
     for (int y = 0; y < 9; y++)
@@ -59,8 +60,8 @@ std::pair <reader::SudokuGrid, cv::Mat> SudokuReader::getSudokuCells(const cv::M
             }
             else
             {
-                std::cout << "Kuva " << y << "," << x << ": Tunnistettu teksti: " << outText;
-                std::cout << "Konfidenssi: " << confidence << "%" << std::endl;
+                // std::cout << "Kuva " << y << "," << x << ": Tunnistettu teksti: " << outText;
+                // std::cout << "Konfidenssi: " << confidence << "%" << std::endl;
                 grid[y][x] = outText[0] - '0';
             }
             delete[] outText;

@@ -5,7 +5,7 @@
 #include "imageprocessor.h"
 
 namespace reader {
-    using SudokuGrid = std::array<std::array<int, 9>, 9>;
+using SudokuGrid = std::vector<std::vector<int>>;
 }
 
 class SudokuReader

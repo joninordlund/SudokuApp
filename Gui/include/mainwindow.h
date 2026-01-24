@@ -2,6 +2,7 @@
 
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QToolButton>
 #include <QWidget>
 
 #include "countlabel.h"
@@ -18,6 +19,7 @@ class MainWindow : public QWidget
   private slots:
     void updateUndoRedoButtons(bool canUndo, bool canRedo);
     void updateCountLabel(int count, int maxCount);
+    void onGenerate();
 
   private:
     QPushButton* m_solveBtn;
@@ -32,6 +34,18 @@ class MainWindow : public QWidget
     Grid* m_grid;
     SudokuImage* m_image;
     QLabel* m_solCountLbl;
+    QPushButton* m_peekBtn;
+    QPushButton* m_leftBrowseBtn;
+    QPushButton* m_rightBrowseBtn;
+    QPushButton* m_loadBtn;
+    QPushButton* m_saveBtn;
+    QPushButton* m_loadImgBtn;
+    QPushButton* m_removeImgBtn;
+    QPushButton* m_setImgToGrid;
+    QLabel* m_editModeValueLbl;
+    QPushButton* m_generateBtn;
+    QList<QToolButton*> m_starButtons;
+    int m_difficulty;
 
   private:
     void onLoadRequested();
@@ -44,16 +58,10 @@ class MainWindow : public QWidget
     QHBoxLayout* createBottomBar();
     void connectSignals();
 
+    QHBoxLayout* setupStars();
+    void updateStars(int level);
+    void updateUI(bool checked);
+
   private slots:
     void onEditModeToggled(bool checked);
-
-  private:
-    // Lisää nämä member-muuttujat:
-    QPushButton* m_peekBtn;
-    QPushButton* m_loadBtn;
-    QPushButton* m_saveBtn;
-    QPushButton* m_loadImgBtn;
-    QPushButton* m_removeImgBtn;
-    QPushButton* m_setImgToGrid;
-    QLabel* m_editModeValueLbl;
 };

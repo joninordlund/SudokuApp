@@ -36,7 +36,7 @@ class Grid : public QWidget {
     History* getHistory() { return &m_history; }
     SudokuBoard& getBoard() { return m_board; }
     void updateUI();
-
+    void setDifficulty(int level);
   public slots:
     void newSudoku(const reader::SudokuGrid& grid);
     void handleMousePress(Cell* cell, bool ctrl);
@@ -48,6 +48,7 @@ class Grid : public QWidget {
     void onUndo() { m_history.undo(); }
     void onRedo() { m_history.redo(); }
     void handleHistoryChanged();
+    void onGenerate();
 
   signals:
     void solutionCountChanged(int count, int maxCount);
@@ -63,15 +64,12 @@ class Grid : public QWidget {
     SudokuBoard m_board;
     SolutionSet m_solutionSet;
     History m_history;
+    int m_removedCount;
 
     void enterDigit(int digit, EMarkType type);
-
     void deleteCell();
-
     void changeCell(int digit, EMarkType type, bool isGiven);
-
     CellData handleNumberInput(int x, int y, int digit, EMarkType inputType);
-
     void reloadStyle();
 
   protected:

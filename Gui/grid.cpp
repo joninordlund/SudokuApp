@@ -21,9 +21,11 @@ Grid::Grid(QWidget* parent) :
     m_isDragging(false),
     m_isPeeking(false),
     m_dirty(false),
-    m_editMode(SOLVE)
+    m_editMode(SOLVE),
+    m_removedCount(33)
 {
-    setFixedSize(540, 540);
+    // setFixedSize(540, 540);
+    setFixedSize(630, 630);
     QGridLayout* layout = new QGridLayout(this);
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -37,6 +39,7 @@ Grid::Grid(QWidget* parent) :
         layout->addWidget(m_cells[i], row, col);
     }
     connect(&m_history, &History::historyStateChanged, this, &Grid::handleHistoryChanged);
+    reloadStyle();
     updateUI();
     grabKeyboard();
 }
@@ -64,7 +67,6 @@ void Grid::applyStateChange(int x, int y, const CellData& newData)
 
 void Grid::newSudoku(const reader::SudokuGrid& grid)
 {
-    qDebug() << "got sudoku";
     m_board.setGivens(grid);
     updateUI();
 }
@@ -183,12 +185,10 @@ void Grid::keyPressEvent(QKeyEvent* event)
                 break;
             case Qt::Key_Up:
                 newRow = max(0, row - 1);
-                // SudokuSerializer::loadFromFile("kala", m_board, m_history);
                 break;
             case Qt::Key_Down:
                 newRow = min(8, row + 1);
                 reloadStyle();
-                // SudokuSerializer::saveToFile("kala", m_board, m_history);
                 break;
             default:
                 return;
@@ -214,11 +214,6 @@ void Grid::keyPressEvent(QKeyEvent* event)
         m_lastSelectedCell->setCursor(false);
         m_lastSelectedCell = nextCell;
         m_lastSelectedCell->setCursor(true);
-    }
-    if (event->key() == Qt::Key_F5)
-    {
-        // reloadStyle();
-        SudokuSerializer::saveToFile("kala", m_board, m_history);
     }
 }
 
@@ -294,9 +289,39 @@ void Grid::onRandom()
 
 void Grid::handleHistoryChanged()
 {
-    qDebug() << "SOl COJSGH";
     m_solutionSet.updateSolutions(m_board.toIntMatrix());
     emit solutionCountChanged(m_solutionSet.count(), m_solutionSet.maxCount());
+}
+
+void Grid::setDifficulty(int level)
+{
+    switch (level)
+    {
+        case 1:
+            m_removedCount = 33;
+            break;
+        case 2:
+            m_removedCount = 39;
+            break;
+        case 3:
+            m_removedCount = 47;
+            break;
+        case 4:
+            m_removedCount = 52;
+            break;
+        case 5:
+            m_removedCount = 60;
+            break;
+        default:
+            break;
+    }
+}
+
+void Grid::onGenerate()
+{
+    Matrix generated = m_solutionSet.generate(m_removedCount);
+    onClearSolution();
+    newSudoku(generated);
 }
 
 void Grid::enterDigit(int digit, EMarkType type)
@@ -388,10 +413,3 @@ void Grid::reloadStyle()
         file.close();
     }
 }
-#ifdef QT_DEBUG
-// Selvitä tämän cpp-tiedoston sijainti ja etsi style.qss sieltä
-QString sourcePath = QFileInfo(__FILE__).absolutePath();
-QFile styleFile(sourcePath + "/../style.qss"); // Mukautetaan projektisi rakenteeseen
-#else
-QFile styleFile(":/style.qss");
-#endif

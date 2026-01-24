@@ -84,6 +84,10 @@ void SudokuBoard::setGivens(const reader::SudokuGrid& clues)
             {
                 m_data[i][j].isGiven = true;
             }
+            else
+            {
+                m_data[i][j].isGiven = false;
+            }
         }
     }
 }

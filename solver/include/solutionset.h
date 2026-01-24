@@ -19,7 +19,7 @@ class SolutionSet
     int count() const { return m_solutions.size(); }
     int maxCount() const { return m_maxSolCount; }
 
-    Matrix generate(int cellCount);
+    Matrix generate(int target);
 
   private:
     SudokuSolver m_solver;

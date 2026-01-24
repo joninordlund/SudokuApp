@@ -1,5 +1,4 @@
-#ifndef SUDOKUSERIALIZER_H
-#define SUDOKUSERIALIZER_H
+#pragma once
 
 #include "history.h"
 #include "sudokuboard.h"
@@ -26,5 +25,3 @@ class SudokuSerializer {
     static void jsonToCellData(const QJsonValue& data, CellData& cellData);
     static void jsonToCellChange(const QJsonValue& data, CellChange& cellChange);
 };
-
-#endif // SUDOKUSERIALIZER_H
