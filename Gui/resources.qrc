@@ -1,7 +1,10 @@
-<!DOCTYPE RCC>
-<RCC version="1.0">
+<RCC>
     <qresource prefix="/fonts">
         <file>fonts/Roboto-Regular.ttf</file>
         <file>fonts/Roboto-Bold.ttf</file>
+    </qresource>
+    <qresource prefix="/icons"/>
+    <qresource prefix="/style">
+        <file>style.css</file>
     </qresource>
 </RCC>

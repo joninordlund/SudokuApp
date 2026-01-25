@@ -41,11 +41,13 @@ pair<Matrix, vector<tuple<int, int, int>>> SudokuSolver::makeSudokuMatrix(const 
 
 vector<Matrix> SudokuSolver::getSolutions(const Matrix &sudoku, bool random, int maxCount)
 {
-    pair<Matrix, vector<tuple<int, int, int>>> sudokuMat = makeSudokuMatrix(sudoku);
+    // pair<Matrix, vector<tuple<int, int, int>>> sudokuMat = makeSudokuMatrix(sudoku);
+    auto sudokuMat = makeSudokuMatrix(sudoku);
+
     DLXBuilder dlx(sudokuMat.first);
     if(random)
     {
-        maxCount = 1;
+        // maxCount = 1;
         dlx.setRandomMode(true);
     }
     auto solutions = dlx.findSolutions(maxCount);
@@ -65,8 +67,24 @@ vector<Matrix> SudokuSolver::getSolutions(const Matrix &sudoku, bool random, int
     return res;
 }
 
+// vector<Matrix> SudokuSolver::getRandomSudokuSet(const Matrix& sudoku, int count)
+// {
+//     vector<Matrix> sol = getSolutions(sudoku, true, count);
+//     return sol;
+// }
+
 vector<Matrix> SudokuSolver::getRandomSudokuSet(const Matrix& sudoku, int count)
 {
-    vector<Matrix> sol = getSolutions(sudoku, true, count);
-    return sol;
+    vector<Matrix> results;
+    for (int i = 0; i < count; ++i)
+    {
+        // Kutsutaan getSolutions niin, että se hakee vain 1 ratkaisun kerrallaan
+        // ja random-flagi on päällä, jolloin DLX käyttää chooseCol-satunnaisuutta.
+        vector<Matrix> singleSol = getSolutions(sudoku, true, 1);
+        if (!singleSol.empty())
+        {
+            results.push_back(singleSol[0]);
+        }
+    }
+    return results;
 }

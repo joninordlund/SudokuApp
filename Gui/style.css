@@ -33,6 +33,11 @@ QPushButton:pressed {
     background-color: #3d8b40;
 }
 
+QPushButton:disabled {
+
+    background-color: darkgray;
+}
+
 QLineEdit {
     border: 1px solid gray;
     border-radius: 4px;

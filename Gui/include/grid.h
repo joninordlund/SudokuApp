@@ -49,6 +49,9 @@ class Grid : public QWidget {
     void onRedo() { m_history.redo(); }
     void handleHistoryChanged();
     void onGenerate();
+    void onSolutionLocked(bool locked);
+    void onBrowseSolLeft();
+    void onBrowseSolRight();
 
   signals:
     void solutionCountChanged(int count, int maxCount);
@@ -65,6 +68,8 @@ class Grid : public QWidget {
     SolutionSet m_solutionSet;
     History m_history;
     int m_removedCount;
+    bool m_solLocked;
+    int m_solIndex;
 
     void enterDigit(int digit, EMarkType type);
     void deleteCell();

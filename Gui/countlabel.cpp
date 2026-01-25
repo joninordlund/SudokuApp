@@ -3,7 +3,7 @@
 void CountLabel::setCount(int count)
 {
     m_count = count;
-    setText(QString("Count: %1").arg(count));
+    setText(QString("C: %1").arg(count));
     updateColor();
 }
 
@@ -29,5 +29,5 @@ void CountLabel::updateColor()
         color = "lightcoral";
     }
 
-    setText(QString("Count: <span style='color: %1; font-size: 18px;'>%2%3</span>").arg(color).arg(m_count).arg(str));
+    setText(QString("C: <span style='color: %1; font-size: 18px;'>%2%3</span>").arg(color).arg(m_count).arg(str));
 }

@@ -4,19 +4,20 @@
 SudokuImage::SudokuImage(QFrame* parent) : QFrame(parent)
 {
     m_image = new QLabel(this);
-    m_image->setFixedSize(parent->size());
+    // m_image->setFixedSize(parent->size());
+    m_image->setFixedSize(parent->size() - QSize(12, 12));
     m_image->setAlignment(Qt::AlignCenter);
+}
 
-    m_cvImg = cv::imread("sudoku121.jpg");
-    if (!m_cvImg.empty())
-    {
-        QPixmap sudoku = cvMatColorToQPixmap(m_cvImg);
-        sudoku = sudoku.scaled(
-            m_image->size(),
-            Qt::KeepAspectRatio,
-            Qt::SmoothTransformation);
-        m_image->setPixmap(sudoku);
-    }
+void SudokuImage::load(QString fileName)
+{
+    m_cvImg = cv::imread(fileName.toStdString());
+    QPixmap sudoku = cvMatColorToQPixmap(m_cvImg);
+    sudoku = sudoku.scaled(
+        m_image->size(),
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation);
+    m_image->setPixmap(sudoku);
 }
 
 QPixmap SudokuImage::cvMatGrayscaleToQPixmap(const cv::Mat& mat)
@@ -32,7 +33,7 @@ QPixmap SudokuImage::cvMatGrayscaleToQPixmap(const cv::Mat& mat)
         mat.rows,
         mat.step,
         QImage::Format_Grayscale8);
-    return QPixmap::fromImage(image);
+    return QPixmap::fromImage(image.copy());
 }
 
 QPixmap SudokuImage::cvMatColorToQPixmap(const cv::Mat& mat)
@@ -55,8 +56,6 @@ QPixmap SudokuImage::cvMatColorToQPixmap(const cv::Mat& mat)
 
 void SudokuImage::mousePressEvent(QMouseEvent* event)
 {
-    qDebug() << "Click";
     std::pair<reader::SudokuGrid, cv::Mat> data = m_reader.getImageData(m_cvImg);
-
     emit newSudoku(data.first);
 }

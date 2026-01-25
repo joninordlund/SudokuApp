@@ -278,18 +278,35 @@ void MainWindow::updateStars(int level)
 void MainWindow::connectSignals()
 {
     connect(m_image, &SudokuImage::newSudoku, m_grid, &Grid::newSudoku);
+    connect(m_loadImgBtn, &QPushButton::clicked, this, &MainWindow::onLoadImage);
     connect(m_peekBtn, &QPushButton::pressed, m_grid, &Grid::onShowSolution);
     connect(m_peekBtn, &QPushButton::released, m_grid, &Grid::onHideSolution);
     connect(m_clearBtn, &QPushButton::clicked, m_grid, &Grid::onClearSolution);
     connect(m_randomBtn, &QPushButton::clicked, m_grid, &Grid::onRandom);
     connect(m_undoBtn, &QPushButton::clicked, m_grid, &Grid::onUndo);
     connect(m_redoBtn, &QPushButton::clicked, m_grid, &Grid::onRedo);
+    connect(m_leftBrowseBtn, &QPushButton::clicked, m_grid, &Grid::onBrowseSolLeft);
+    connect(m_rightBrowseBtn, &QPushButton::clicked, m_grid, &Grid::onBrowseSolRight);
+    connect(m_lockToggle, &ToggleSwitch::toggled, m_grid, &Grid::onSolutionLocked);
     connect(m_generateBtn, &QPushButton::clicked, this, &MainWindow::onGenerate);
     connect(m_editModeToggle, &ToggleSwitch::toggled, this, &MainWindow::onEditModeToggled);
     connect(m_grid->getHistory(), &History::historyStateChanged, this, &MainWindow::updateUndoRedoButtons);
     connect(m_grid, &Grid::solutionCountChanged, this, &MainWindow::updateCountLabel);
     connect(m_loadBtn, &QPushButton::clicked, this, &MainWindow::onLoadRequested);
     connect(m_saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveRequested);
+}
+
+void MainWindow::onLoadImage()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    tr("Open Sudoku Image"), "",
+                                                    tr("Images (*.png *.jpg *.jpeg *.bmp)"));
+
+    if (fileName.isEmpty())
+    {
+        return;
+    };
+    m_image->load(fileName);
 }
 
 void MainWindow::onGenerate()
@@ -308,8 +325,12 @@ void MainWindow::onEditModeToggled(bool checked)
 
 void MainWindow::updateUI(bool checked)
 {
-    m_leftBrowseBtn->setEnabled(!checked);
-    m_rightBrowseBtn->setEnabled(!checked);
+    m_leftBrowseBtn->setEnabled(checked);
+    m_rightBrowseBtn->setEnabled(checked);
+    m_generateBtn->setEnabled(checked);
+    m_randomBtn->setEnabled(checked);
+    m_solCountLbl->setEnabled(checked);
+    m_lockToggle->setEnabled(checked);
 }
 
 void MainWindow::updateUndoRedoButtons(bool canUndo, bool canRedo)

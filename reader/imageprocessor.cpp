@@ -202,7 +202,7 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
 
         cv::Mat croppedNumber = thresh(finalRoi).clone();
 
-        int padding = 5;
+        int padding = 10;
         cv::copyMakeBorder(croppedNumber, croppedNumber,
                            padding,
                            padding,
@@ -224,7 +224,6 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
         }
         else
         {
-
             newHeight = DESIRED_SIZE;
             newWidth = cvRound(DESIRED_SIZE * aspectRatio);
         }
@@ -241,24 +240,22 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
     }
     else
     {
-        return cv::Mat::ones(50, 50, thresh.type()) * 255;
+        cv::Mat m = cv::Mat::ones(50, 50, thresh.type());
+        // cv::imshow("kolo", m);
+        // cv::waitKey(0);
+
+        return cv::Mat::ones(50, 50, thresh.type());
     }
 }
 
 cv::Mat ImageProcessor::getProcessedSudokuImage(const cv::Mat &deskewedOriginal)
 {
-    // Määritä solujen koko.
-    // Oletetaan, että deskewedOriginal on jo deskewedSudoku (900x900)
     int singleCellSize = deskewedOriginal.rows / 9;
 
-    cv::Mat finalImage; // Lopputulos (9x9 koottu ruudukko)
-
-    // Iteroi riveittäin (y)
+    cv::Mat finalImage;
     for (int y = 0; y < 9; y++)
     {
-        cv::Mat rowImage; // Tähän kerätään yhden rivin (9 solua) kuva
-
-        // Iteroi sarakkeittain (x)
+        cv::Mat rowImage;
         for (int x = 0; x < 9; x++)
         {
 

@@ -26,5 +26,5 @@ class SolutionSet
     vector<Matrix> m_solutions;
     int m_index;
     int m_maxSolCount;
+    bool isUnique(const Matrix& matrix);
 };
-

@@ -20,6 +20,8 @@ class MainWindow : public QWidget
     void updateUndoRedoButtons(bool canUndo, bool canRedo);
     void updateCountLabel(int count, int maxCount);
     void onGenerate();
+    void onEditModeToggled(bool checked);
+    void onLoadImage();
 
   private:
     QPushButton* m_solveBtn;
@@ -61,7 +63,4 @@ class MainWindow : public QWidget
     QHBoxLayout* setupStars();
     void updateStars(int level);
     void updateUI(bool checked);
-
-  private slots:
-    void onEditModeToggled(bool checked);
 };

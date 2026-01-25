@@ -10,6 +10,8 @@ class SudokuImage : public QFrame {
   public:
     explicit SudokuImage(QFrame* parent = nullptr);
 
+    void load(QString fileName);
+
   private:
     QLabel* m_image;
     cv::Mat m_cvImg;

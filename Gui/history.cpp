@@ -5,8 +5,8 @@
 
 void History::undo()
 {
-    qDebug() << "Undo past size: " << m_past.size();
-    qDebug() << "Undo future size: " << m_future.size();
+    // qDebug() << "Undo past size: " << m_past.size();
+    // qDebug() << "Undo future size: " << m_future.size();
 
     if (m_past.size() > 0)
     {
@@ -24,8 +24,9 @@ void History::undo()
 
 void History::redo()
 {
-    qDebug() << "Redo past size: " << m_past.size();
-    qDebug() << "Redo future size: " << m_future.size();
+    /* qDebug() << "Redo past size: " << m_past.size();
+     qDebug() << "Redo future size: " << m_future.size()*/
+    ;
 
     if (m_future.size() > 0)
     {
@@ -46,5 +47,5 @@ void History::setNewCommand(vector<CellChange> cmd)
     m_past.push_back(cmd);
     m_future.clear();
     emit historyStateChanged(m_past.size() > 0, m_future.size() > 0);
-    qDebug() << "NewCommand Past size: " << m_past.size();
+    // qDebug() << "NewCommand Past size: " << m_past.size();
 }

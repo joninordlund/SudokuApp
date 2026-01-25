@@ -1,7 +1,6 @@
 #include "DLXBuilder.h"
 #include <limits>
 #include <cassert>
-#include <algorithm>
 
 vector<vector<int>> DLXBuilder::findSolutions(int maxCount)
 {
@@ -215,7 +214,8 @@ void DLXBuilder::search(int x)
         r = m_nodes[r].down;
     }
 
-    std::shuffle(rowCandidates.begin(), rowCandidates.end(), m_rndGen);
+    // std::mt19937 localRng(m_rndGen());
+    // std::shuffle(rowCandidates.begin(), rowCandidates.end(), localRng);
 
     for (int r : rowCandidates)
     {
@@ -254,9 +254,17 @@ void DLXBuilder::search(int x)
     }
     uncover(col);
 }
+int DLXBuilder::chooseCol()
+{
+    if (m_randomMode)
+    {
+        return chooseColRandom();
+    }
+    return chooseColMRV();
+}
 
 // choose the first column with minimum length (MRV heuristic)
-int DLXBuilder::chooseCol()
+int DLXBuilder::chooseColMRV()
 {
     int best = -1;
     int bestLen = numeric_limits<int>::max();
@@ -272,4 +280,29 @@ int DLXBuilder::chooseCol()
     return best;
 }
 
+int DLXBuilder::chooseColRandom()
+{
+    int minSize = 1000000;
+    for (int i = m_nodes[0].right; i != 0; i = m_nodes[i].right)
+    {
+        if (m_nodes[i].len < minSize)
+            minSize = m_nodes[i].len;
+    }
 
+    // Jos minSize on 0, ollaan umpikujassa, palauta mikä tahansa
+    if (minSize == 0)
+        return m_nodes[0].right;
+
+    vector<int> candidates;
+    for (int i = m_nodes[0].right; i != 0; i = m_nodes[i].right)
+    {
+        // Otetaan mukaan sarakkeet, joissa on vähän vaihtoehtoja (esim. minSize tai minSize + 1)
+        if (m_nodes[i].len <= minSize)
+        {
+            candidates.push_back(i);
+        }
+    }
+
+    std::uniform_int_distribution<int> dist(0, candidates.size() - 1);
+    return candidates[dist(m_rndGen)];
+}

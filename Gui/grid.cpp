@@ -1,6 +1,5 @@
 #include "grid.h"
 #include "cellchange.h"
-#include "sudokuserializer.h"
 #include "sudokusolver.h"
 
 #include <QApplication>
@@ -22,7 +21,9 @@ Grid::Grid(QWidget* parent) :
     m_isPeeking(false),
     m_dirty(false),
     m_editMode(SOLVE),
-    m_removedCount(33)
+    m_removedCount(33),
+    m_solLocked(false),
+    m_solIndex(1)
 {
     // setFixedSize(540, 540);
     setFixedSize(630, 630);
@@ -238,6 +239,10 @@ void Grid::onShowSolution()
 
 void Grid::onHideSolution()
 {
+    if (m_solLocked)
+    {
+        return;
+    }
     m_isPeeking = false;
     m_board.restoreData();
     updateUI();
@@ -285,6 +290,7 @@ void Grid::onClearSolution()
 void Grid::onRandom()
 {
     qDebug() << "RANSKU";
+    reloadStyle();
 }
 
 void Grid::handleHistoryChanged()
@@ -295,33 +301,45 @@ void Grid::handleHistoryChanged()
 
 void Grid::setDifficulty(int level)
 {
-    switch (level)
-    {
-        case 1:
-            m_removedCount = 33;
-            break;
-        case 2:
-            m_removedCount = 39;
-            break;
-        case 3:
-            m_removedCount = 47;
-            break;
-        case 4:
-            m_removedCount = 52;
-            break;
-        case 5:
-            m_removedCount = 60;
-            break;
-        default:
-            break;
-    }
+    vector<int> removed{35, 42, 48, 52, 55};
+    m_removedCount = removed[level - 1];
 }
 
 void Grid::onGenerate()
 {
     Matrix generated = m_solutionSet.generate(m_removedCount);
-    onClearSolution();
+    m_board.clearAll();
     newSudoku(generated);
+}
+
+void Grid::onSolutionLocked(bool locked)
+{
+    m_solLocked = locked;
+    onHideSolution();
+}
+
+void Grid::onBrowseSolLeft()
+{
+    qDebug() << "Left: sol index" << m_solIndex;
+    if (m_solIndex <= 1)
+    {
+        return;
+    }
+    Matrix prev = m_solutionSet.prev();
+    newSudoku(prev);
+    m_solIndex--;
+}
+
+void Grid::onBrowseSolRight()
+{
+    qDebug() << "Right: sol index" << m_solIndex;
+    if (m_solIndex == m_solutionSet.count())
+    {
+        return;
+    }
+    Matrix next = m_solutionSet.next();
+    newSudoku(next);
+    m_solIndex++;
 }
 
 void Grid::enterDigit(int digit, EMarkType type)
