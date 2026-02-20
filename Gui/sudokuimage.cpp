@@ -1,23 +1,45 @@
 #include "sudokuimage.h"
 #include <opencv2/opencv.hpp>
 
-SudokuImage::SudokuImage(QFrame* parent) : QFrame(parent)
+SudokuImage::SudokuImage(QFrame* parent) :
+    QFrame(parent), m_isImgLoaded(false)
 {
     m_image = new QLabel(this);
-    // m_image->setFixedSize(parent->size());
     m_image->setFixedSize(parent->size() - QSize(12, 12));
     m_image->setAlignment(Qt::AlignCenter);
 }
 
 void SudokuImage::load(QString fileName)
 {
-    m_cvImg = cv::imread(fileName.toStdString());
-    QPixmap sudoku = cvMatColorToQPixmap(m_cvImg);
-    sudoku = sudoku.scaled(
+    cv::Mat origImg = cv::imread(fileName.toStdString());
+    if (!origImg.empty())
+    {
+        setImage(origImg);
+        m_isImgLoaded = true;
+    }
+}
+
+void SudokuImage::setImage(cv::Mat origImg)
+{
+    std::pair<reader::SudokuGrid, cv::Mat> data = m_reader.getImageData(origImg);
+    m_sudokuMatrix = data.first;
+    m_debugPixmap = cvMatGrayscaleToQPixmap(data.second.clone());
+    m_debugPixmap = m_debugPixmap.scaled(
         m_image->size(),
         Qt::KeepAspectRatio,
         Qt::SmoothTransformation);
-    m_image->setPixmap(sudoku);
+    m_origPixmap = cvMatColorToQPixmap(origImg.clone());
+    m_origPixmap = m_origPixmap.scaled(
+        m_image->size(),
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation);
+    m_image->setPixmap(m_origPixmap);
+}
+
+void SudokuImage::setDebugView(bool visible)
+{
+
+    m_image->setPixmap(visible ? m_debugPixmap : m_origPixmap);
 }
 
 QPixmap SudokuImage::cvMatGrayscaleToQPixmap(const cv::Mat& mat)
@@ -51,11 +73,27 @@ QPixmap SudokuImage::cvMatColorToQPixmap(const cv::Mat& mat)
         rgbMat.rows,
         rgbMat.step,
         QImage::Format_RGB888);
-    return QPixmap::fromImage(image);
+    return QPixmap::fromImage(image.copy());
+}
+
+void SudokuImage::onRemove()
+{
+    m_isImgLoaded = false;
+    QPixmap empty(QSize(1, 1));
+    m_image->clear();
+
+    empty.fill(Qt::lightGray);
+    empty = empty.scaled(
+        m_image->size(),
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation);
+    m_image->setPixmap(empty);
 }
 
 void SudokuImage::mousePressEvent(QMouseEvent* event)
 {
-    std::pair<reader::SudokuGrid, cv::Mat> data = m_reader.getImageData(m_cvImg);
-    emit newSudoku(data.first);
+    if (m_isImgLoaded)
+    {
+        emit newSudoku(m_sudokuMatrix);
+    }
 }

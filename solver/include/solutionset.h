@@ -9,10 +9,11 @@ class SolutionSet
 {
   public:
     SolutionSet()
-        : m_index(0), m_maxSolCount(64), m_solutions{{}} {}
+        : m_index(0), m_maxSolCount(25), m_solutions{{}} {}
 
-    void updateSolutions(const Matrix &matrix, int maxCount = 64);
+    void updateSolutions(const Matrix& matrix, int maxCount);
     vector<Matrix> getRandomSudokuSet(const Matrix& matrix, int count);
+    int currentIndex() const { return m_index; }
     Matrix next();
     Matrix prev();
 

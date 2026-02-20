@@ -7,22 +7,9 @@
 
 void SolutionSet::updateSolutions(const Matrix& matrix, int maxCount)
 {
-    // m_maxSolCount = maxCount;
-    // m_solutions.clear();
-    // m_solutions = m_solver.getSolutions(matrix, false, 1);
     m_maxSolCount = maxCount;
-    // m_solutions = m_solver.getSolutions(matrix, true, m_maxSolCount);
     m_solutions = getRandomSudokuSet(matrix, maxCount);
-    m_index = 0;
-    // for (int i = 0; i < maxCount; ++i)
-    // {
-
-    //     vector<Matrix> sol = m_solver.getSolutions(matrix, false, 1);
-    //     if (!sol.empty())
-    //     {
-    //         m_solutions.push_back((sol[0]));
-    //     }
-    // }
+    m_index = -1;
 }
 
 vector<Matrix> SolutionSet::getRandomSudokuSet(const Matrix& sudoku, int count)
@@ -44,6 +31,7 @@ Matrix SolutionSet::next()
     }
 
     m_index = (m_index + 1) % m_solutions.size();
+    // cout << "next index: " << m_index << endl;
     return m_solutions[m_index];
 }
 
@@ -52,9 +40,17 @@ Matrix SolutionSet::prev()
     if (m_solutions.empty())
     {
         return Matrix();
-    };
+    }
 
-    m_index = (m_index - 1 + m_solutions.size()) % m_solutions.size();
+    if (m_index <= 0)
+    {
+        m_index = m_solutions.size() - 1;
+    }
+    else
+    {
+        m_index--;
+    }
+    // cout << "prev index: " << m_index << endl;
     return m_solutions[m_index];
 }
 

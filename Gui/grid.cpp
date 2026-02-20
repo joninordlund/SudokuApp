@@ -22,10 +22,8 @@ Grid::Grid(QWidget* parent) :
     m_dirty(false),
     m_editMode(SOLVE),
     m_removedCount(33),
-    m_solLocked(false),
-    m_solIndex(1)
+    m_solLocked(false)
 {
-    // setFixedSize(540, 540);
     setFixedSize(630, 630);
     QGridLayout* layout = new QGridLayout(this);
     layout->setSpacing(0);
@@ -137,7 +135,7 @@ void Grid::keyPressEvent(QKeyEvent* event)
     }
 
     bool alt = event->modifiers() & Qt::AltModifier; // corner pencil marks
-    bool shift = event->modifiers() & Qt::ShiftModifier;
+    bool shift = event->modifiers() & Qt::ShiftModifier;  // multi-selection
     bool ctrl = event->modifiers() & Qt::ControlModifier; // center pencil marks
 
     int key = event->key();
@@ -170,6 +168,7 @@ void Grid::keyPressEvent(QKeyEvent* event)
         m_lastSelectedCell = nullptr;
         return;
     }
+
     if (m_lastSelectedCell)
     {
         int row, col, newRow, newCol;
@@ -179,24 +178,24 @@ void Grid::keyPressEvent(QKeyEvent* event)
         switch (key)
         {
             case Qt::Key_Left:
-                newCol = max(0, col - 1);
+                newCol = std::max(0, col - 1);
                 break;
             case Qt::Key_Right:
-                newCol = min(8, col + 1);
+                newCol = std::min(8, col + 1);
                 break;
             case Qt::Key_Up:
-                newRow = max(0, row - 1);
+                newRow = std::max(0, row - 1);
                 break;
             case Qt::Key_Down:
-                newRow = min(8, row + 1);
-                reloadStyle();
+                newRow = std::min(8, row + 1);
                 break;
             default:
                 return;
         }
 
         Cell* nextCell = m_cells[newRow * 9 + newCol];
-        if (ctrl)
+
+        if (shift || ctrl)
         {
             m_selectedCellSet.insert(nextCell);
             nextCell->setSelected(true);
@@ -211,42 +210,100 @@ void Grid::keyPressEvent(QKeyEvent* event)
             m_selectedCellSet.insert(nextCell);
             nextCell->setSelected(true);
         }
-
         m_lastSelectedCell->setCursor(false);
         m_lastSelectedCell = nextCell;
         m_lastSelectedCell->setCursor(true);
     }
 }
 
+// void Grid::onShowSolution()
+// {
+//     m_isPeeking = true;
+//     m_board.saveData();
+
+//     if (m_solLocked == true)
+//     {
+//         m_board.clearUserDigits();
+//         m_solutionSet.updateSolutions(m_board.toIntMatrix(), m_solutionSet.maxCount());
+//         if (m_solutionSet.count() > 0)
+//         {
+//             m_board.applySolution(m_solutionSet.next());
+//         }
+//     }
+//     else
+//     {
+//         vector<Matrix> sols = m_solutionSet.getRandomSudokuSet(m_board.toIntMatrix(), 1);
+//         if (!sols.empty())
+//         {
+//             m_board.applySolution(sols[0]);
+//         }
+//     }
+//     updateUI();
+// }
+
 void Grid::onShowSolution()
 {
     m_isPeeking = true;
     m_board.saveData();
-    m_board.clearUserDigits();
 
-    m_solutionSet.updateSolutions(m_board.toIntMatrix());
-    if (m_solutionSet.count() > 0)
+    if (m_solLocked)
     {
-        m_board.applySolution(m_solutionSet.next());
-        qDebug() << "solution count:" << m_solutionSet.count();
+        resetSolutions();
     }
     else
     {
-        qDebug() << "sudoku has no solutions!";
+        peekSingleSolution();
     }
     updateUI();
+}
+
+void Grid::peekSingleSolution()
+{
+    m_isPeeking = true;
+    m_board.saveData();
+
+    vector<Matrix> sols = m_solutionSet.getRandomSudokuSet(m_board.toIntMatrix(), 1);
+    if (!sols.empty())
+    {
+        m_board.applySolution(sols[0]);
+    }
+    updateUI();
+}
+
+void Grid::resetSolutions()
+{
+    m_board.clearUserDigits();
+    m_solutionSet.updateSolutions(m_board.toIntMatrix(), m_solutionSet.maxCount());
+
+    if (m_solutionSet.count() > 0)
+    {
+        m_board.applySolution(m_solutionSet.next());
+    }
+    else
+    {
+        m_board.clearUserDigits();
+    }
+    updateUI();
+    emit solutionCountChanged(m_solutionSet.currentIndex() + 1, m_solutionSet.count());
 }
 
 void Grid::onHideSolution()
 {
-    if (m_solLocked)
-    {
-        return;
-    }
     m_isPeeking = false;
     m_board.restoreData();
     updateUI();
 }
+
+// void Grid::onHideSolution()
+// {
+//     if (m_solLocked)
+//     {
+//         return;
+//     }
+//     m_isPeeking = false;
+//     m_board.restoreData();
+//     updateUI();
+// }
 
 void Grid::onEditModeChanged(bool checked)
 {
@@ -259,12 +316,12 @@ void Grid::onClearSolution()
     QString info;
     if (m_editMode == SOLVE)
     {
-        text = "You are about clear all but the clues. Are you sure?";
+        text = "You are about to clear all but the clues. Are you sure?";
         info = "If you want to clear the clues also, switch the entering clues on.";
     }
     else
     {
-        text = "You are about clear everything. Are you sure?";
+        text = "You are about to clear everything. Are you sure?";
         info = "If you don't want to clear the clues, switch the solving mode on.";
     }
     QMessageBox msgBox;
@@ -295,7 +352,7 @@ void Grid::onRandom()
 
 void Grid::handleHistoryChanged()
 {
-    m_solutionSet.updateSolutions(m_board.toIntMatrix());
+    // m_solutionSet.updateSolutions(m_board.toIntMatrix());
     emit solutionCountChanged(m_solutionSet.count(), m_solutionSet.maxCount());
 }
 
@@ -315,31 +372,45 @@ void Grid::onGenerate()
 void Grid::onSolutionLocked(bool locked)
 {
     m_solLocked = locked;
+    if (locked)
+    {
+        m_solutionSet.updateSolutions(m_board.toIntMatrix(), m_solutionSet.maxCount());
+        if (m_solutionSet.count() > 0)
+        {
+            m_board.saveData();
+            m_board.applySolution(m_solutionSet.next());
+            emit solutionCountChanged(m_solutionSet.currentIndex() + 1, m_solutionSet.count());
+            updateUI();
+            return;
+        }
+    }
     onHideSolution();
 }
 
 void Grid::onBrowseSolLeft()
 {
-    qDebug() << "Left: sol index" << m_solIndex;
-    if (m_solIndex <= 1)
+    if (m_solutionSet.count() == 0)
     {
         return;
     }
     Matrix prev = m_solutionSet.prev();
-    newSudoku(prev);
-    m_solIndex--;
+    m_board.applySolution(prev);
+    updateUI();
+    emit solutionCountChanged(m_solutionSet.currentIndex() + 1, m_solutionSet.count());
 }
 
 void Grid::onBrowseSolRight()
 {
-    qDebug() << "Right: sol index" << m_solIndex;
-    if (m_solIndex == m_solutionSet.count())
+
+    if (m_solutionSet.count() == 0)
     {
         return;
     }
+
     Matrix next = m_solutionSet.next();
-    newSudoku(next);
-    m_solIndex++;
+    m_board.applySolution(next);
+    updateUI();
+    emit solutionCountChanged(m_solutionSet.currentIndex() + 1, m_solutionSet.count());
 }
 
 void Grid::enterDigit(int digit, EMarkType type)
@@ -387,10 +458,10 @@ CellData Grid::handleNumberInput(int x, int y, int digit, EMarkType type)
     switch (type)
     {
         case DIGIT:
-            newState.digit = digit;
+            qDebug() << "Digit:" << digit;
+            // m_solutionSet.updateSolutions(m_board.toIntMatrix(), 25);
             newState.isGiven = (m_editMode == EDIT_CLUES);
-            newState.cornerMarks = 0;
-            newState.centerMarks = 0;
+            newState.digit = (newState.digit == digit && !newState.isGiven) ? 0 : digit;
             break;
         case DELETE:
             newState.digit = 0;

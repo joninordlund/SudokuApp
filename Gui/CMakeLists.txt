@@ -12,9 +12,12 @@ add_executable(SudokuApp
     include/sudokuserializer.h sudokuserializer.cpp
     include/countlabel.h countlabel.cpp
     style.qss
+    style.css
 
 
 )
+
+find_package(Qt6 REQUIRED COMPONENTS Svg)
 
 target_include_directories(SudokuApp
     PRIVATE
@@ -24,6 +27,7 @@ target_include_directories(SudokuApp
 target_link_libraries(SudokuApp
     PRIVATE
         Qt6::Widgets
+        Qt6::Svg
         solver
         reader
 )

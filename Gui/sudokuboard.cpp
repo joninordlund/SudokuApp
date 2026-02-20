@@ -56,8 +56,7 @@ vector<vector<int>> SudokuBoard::toIntMatrix() const
     return matrix;
 }
 
-
-void SudokuBoard::applySolution(const vector<vector<int>>& solution)
+void SudokuBoard::applySolution(const vector<vector<int>>& sol)
 {
     for (int i = 0; i < 9; i++)
     {
@@ -65,9 +64,9 @@ void SudokuBoard::applySolution(const vector<vector<int>>& solution)
         {
             if (!m_data[i][j].isGiven)
             {
-                m_data[i][j].digit = solution[i][j];
-                m_data[i][j].cornerMarks = 0;
+                m_data[i][j].digit = sol[i][j];
                 m_data[i][j].centerMarks = 0;
+                m_data[i][j].cornerMarks = 0;
             }
         }
     }
@@ -75,18 +74,15 @@ void SudokuBoard::applySolution(const vector<vector<int>>& solution)
 
 void SudokuBoard::setGivens(const reader::SudokuGrid& clues)
 {
+    clearAll();
     for (int i = 0; i < 9; i++)
     {
         for (int j = 0; j < 9; j++)
         {
-            m_data[i][j].digit = clues[i][j];
-            if(clues[i][j] > 0)
+            if (clues[i][j] > 0)
             {
+                m_data[i][j].digit = clues[i][j];
                 m_data[i][j].isGiven = true;
-            }
-            else
-            {
-                m_data[i][j].isGiven = false;
             }
         }
     }

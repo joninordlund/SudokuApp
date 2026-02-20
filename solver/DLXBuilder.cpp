@@ -254,6 +254,7 @@ void DLXBuilder::search(int x)
     }
     uncover(col);
 }
+
 int DLXBuilder::chooseCol()
 {
     if (m_randomMode)

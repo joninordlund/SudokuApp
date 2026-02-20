@@ -10,18 +10,31 @@
 #include "sudokuimage.h"
 #include "toggleswitch.h"
 
+#include <QKeyEvent>
+
 class MainWindow : public QWidget
 {
     Q_OBJECT
   public:
     explicit MainWindow(QWidget *parent = nullptr);
 
+  protected:
+    // void keyPressEvent(QKeyEvent* event) override;
+    // void keyReleaseEvent(QKeyEvent* event) override;
+
+    bool eventFilter(QObject* obj, QEvent* event) override;
+
   private slots:
     void updateUndoRedoButtons(bool canUndo, bool canRedo);
-    void updateCountLabel(int count, int maxCount);
+    void onExportToPdf();
+    // void updateCountLabel(int count, int maxCount);
     void onGenerate();
     void onEditModeToggled(bool checked);
     void onLoadImage();
+    void onPeek();
+    // void onLockToggle(bool checked);
+
+    void onLockToggled(bool checked);
 
   private:
     QPushButton* m_solveBtn;
@@ -35,12 +48,14 @@ class MainWindow : public QWidget
     CountLabel* m_puzzleCountLabel;
     Grid* m_grid;
     SudokuImage* m_image;
-    QLabel* m_solCountLbl;
+
     QPushButton* m_peekBtn;
     QPushButton* m_leftBrowseBtn;
     QPushButton* m_rightBrowseBtn;
+    QLabel* m_solIndexLabel;
     QPushButton* m_loadBtn;
     QPushButton* m_saveBtn;
+    QPushButton* m_toPDFBtn;
     QPushButton* m_loadImgBtn;
     QPushButton* m_removeImgBtn;
     QPushButton* m_setImgToGrid;
@@ -63,4 +78,5 @@ class MainWindow : public QWidget
     QHBoxLayout* setupStars();
     void updateStars(int level);
     void updateUI(bool checked);
+    void updateSolutionCount(int current, int total);
 };

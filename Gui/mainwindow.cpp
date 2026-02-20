@@ -5,6 +5,9 @@
 #include <QCheckBox>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPdfWriter>
+#include <QStyle>
 #include <QVBoxLayout>
 
 const int areaSize = 630;
@@ -17,6 +20,8 @@ MainWindow::MainWindow(QWidget* parent) :
     // setFixedSize(1380, 640);
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     QWidget* centerArea = new QWidget;
+    // centerArea->setObjectName("center");
+    // centerArea->setStyleSheet("");
     QHBoxLayout* centerLayout = new QHBoxLayout(centerArea);
     centerLayout->setSpacing(20);
     centerLayout->setContentsMargins(0, 0, 0, 0);
@@ -32,13 +37,15 @@ MainWindow::MainWindow(QWidget* parent) :
     onEditModeToggled(m_editModeToggle->isChecked());
 
     connectSignals();
+    qApp->installEventFilter(this);
+    updateUI(false);
 }
 
 QWidget* MainWindow::createLeftControls()
 {
     const int spacing = 7;
     QWidget* controlArea = new QWidget;
-    controlArea->setFixedWidth(90);
+    controlArea->setFixedWidth(96);
     QVBoxLayout* layout = new QVBoxLayout(controlArea);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(10);
@@ -46,12 +53,14 @@ QWidget* MainWindow::createLeftControls()
     // File section
     QLabel* fileLbl = new QLabel("File");
     fileLbl->setObjectName("sectionLabel");
-    QPushButton* loadBtn = new QPushButton("Load");
-    QPushButton* saveBtn = new QPushButton("Save");
+    m_loadBtn = new QPushButton("Load");
+    m_saveBtn = new QPushButton("Save");
+    m_toPDFBtn = new QPushButton("To PDF");
 
     layout->addWidget(fileLbl);
-    layout->addWidget(loadBtn);
-    layout->addWidget(saveBtn);
+    layout->addWidget(m_loadBtn);
+    layout->addWidget(m_saveBtn);
+    layout->addWidget(m_toPDFBtn);
     layout->addSpacing(spacing);
 
     // Sudoku section
@@ -65,10 +74,16 @@ QWidget* MainWindow::createLeftControls()
     undoRedoLayout->setContentsMargins(0, 0, 0, 0);
     undoRedoLayout->setSpacing(5);
 
-    m_undoBtn = new QPushButton("↶");
-    m_redoBtn = new QPushButton("↷");
-    // m_undoBtn->setObjectName("colorRed");
-    // m_redoBtn->setObjectName("colorRed");
+    m_undoBtn = new QPushButton();
+    m_undoBtn->setIcon(QIcon(":/icons/icons/undo.svg"));
+    m_undoBtn->setIconSize(QSize(24, 24));
+    m_undoBtn->setFixedSize(35, 35);
+    m_undoBtn->setObjectName("undo");
+    m_redoBtn = new QPushButton();
+    m_redoBtn->setIcon(QIcon(":/icons/icons/redo.svg"));
+    m_redoBtn->setFixedSize(35, 35);
+    m_redoBtn->setIconSize(QSize(24, 24));
+    m_redoBtn->setObjectName("redo");
     m_undoBtn->setFixedSize(35, 35);
     m_redoBtn->setFixedSize(35, 35);
 
@@ -138,25 +153,25 @@ QWidget* MainWindow::createLeftControls()
     arrowLayout->setContentsMargins(0, 0, 0, 0);
     arrowLayout->setSpacing(5);
 
-    m_leftBrowseBtn = new QPushButton("←");
-    m_rightBrowseBtn = new QPushButton("→");
+    m_leftBrowseBtn = new QPushButton();
+    m_leftBrowseBtn->setIcon(QIcon(":/icons/icons/chevron_left.svg"));
+    m_leftBrowseBtn->setIconSize(QSize(24, 24));
     m_leftBrowseBtn->setFixedSize(35, 35);
+    m_leftBrowseBtn->setObjectName("leftBrowse");
+    m_rightBrowseBtn = new QPushButton();
+    m_rightBrowseBtn->setIcon(QIcon(":/icons/icons/chevron_right.svg"));
+    m_rightBrowseBtn->setIconSize(QSize(24, 24));
     m_rightBrowseBtn->setFixedSize(35, 35);
+    m_rightBrowseBtn->setObjectName("rightBrowse");
 
     arrowLayout->addWidget(m_leftBrowseBtn);
     arrowLayout->addWidget(m_rightBrowseBtn);
+    m_solIndexLabel = new QLabel("0 / 0");
+    m_solIndexLabel->setAlignment(Qt::AlignCenter);
+    m_solIndexLabel->setStyleSheet("color: #2c3e50; font-weight: bold; font-size: 14px;");
     layout->addWidget(arrowWidget);
-
-    // Puzzle count
-    m_puzzleCountLabel = new CountLabel;
-    m_puzzleCountLabel->setCount(100);
-    layout->addWidget(m_puzzleCountLabel);
-
+    layout->addWidget(m_solIndexLabel);
     layout->addStretch();
-
-    // Store buttons for signal connection
-    m_loadBtn = loadBtn;
-    m_saveBtn = saveBtn;
 
     return controlArea;
 }
@@ -203,7 +218,7 @@ QWidget* MainWindow::createImageControls()
     m_loadImgBtn = new QPushButton("Load");
     m_removeImgBtn = new QPushButton("Remove");
     m_setImgToGrid = new QPushButton("Set");
-    m_setImgToGrid->setObjectName("colorGreen");
+    // m_setImgToGrid->setObjectName("colorGreen");
 
     layout->addWidget(imgLbl);
     layout->addWidget(m_loadImgBtn);
@@ -223,13 +238,13 @@ QHBoxLayout* MainWindow::createBottomBar()
     QHBoxLayout* buttonLayout = new QHBoxLayout;
     buttonLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_solCountLbl = new QLabel("Solution count: ");
+    // m_solCountLbl = new QLabel("Solution count: ");
 
     QLabel* editModeLabel = new QLabel("Mode:");
     m_editModeValueLbl = new QLabel("Solve");
 
-    buttonLayout->addWidget(m_solCountLbl);
-    buttonLayout->addSpacing(40);
+    // buttonLayout->addWidget(m_solCountLbl);
+    // buttonLayout->addSpacing(40);
     buttonLayout->addWidget(editModeLabel);
     buttonLayout->addWidget(m_editModeValueLbl);
     buttonLayout->addStretch();
@@ -278,8 +293,10 @@ void MainWindow::updateStars(int level)
 void MainWindow::connectSignals()
 {
     connect(m_image, &SudokuImage::newSudoku, m_grid, &Grid::newSudoku);
+    connect(m_grid, &Grid::solutionCountChanged, this, &MainWindow::updateSolutionCount);
     connect(m_loadImgBtn, &QPushButton::clicked, this, &MainWindow::onLoadImage);
-    connect(m_peekBtn, &QPushButton::pressed, m_grid, &Grid::onShowSolution);
+    connect(m_removeImgBtn, &QPushButton::clicked, m_image, &SudokuImage::onRemove);
+    connect(m_peekBtn, &QPushButton::pressed, this, &MainWindow::onPeek);
     connect(m_peekBtn, &QPushButton::released, m_grid, &Grid::onHideSolution);
     connect(m_clearBtn, &QPushButton::clicked, m_grid, &Grid::onClearSolution);
     connect(m_randomBtn, &QPushButton::clicked, m_grid, &Grid::onRandom);
@@ -287,15 +304,89 @@ void MainWindow::connectSignals()
     connect(m_redoBtn, &QPushButton::clicked, m_grid, &Grid::onRedo);
     connect(m_leftBrowseBtn, &QPushButton::clicked, m_grid, &Grid::onBrowseSolLeft);
     connect(m_rightBrowseBtn, &QPushButton::clicked, m_grid, &Grid::onBrowseSolRight);
-    connect(m_lockToggle, &ToggleSwitch::toggled, m_grid, &Grid::onSolutionLocked);
+    connect(m_lockToggle, &ToggleSwitch::toggled, this, &MainWindow::onLockToggled);
     connect(m_generateBtn, &QPushButton::clicked, this, &MainWindow::onGenerate);
     connect(m_editModeToggle, &ToggleSwitch::toggled, this, &MainWindow::onEditModeToggled);
-    connect(m_grid->getHistory(), &History::historyStateChanged, this, &MainWindow::updateUndoRedoButtons);
-    connect(m_grid, &Grid::solutionCountChanged, this, &MainWindow::updateCountLabel);
+    connect(m_toPDFBtn, &QPushButton::clicked, this, &MainWindow::onExportToPdf);
     connect(m_loadBtn, &QPushButton::clicked, this, &MainWindow::onLoadRequested);
     connect(m_saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveRequested);
+    // connect(m_lockToggle, &ToggleSwitch::toggled, this, [=](bool locked)
+    //         { updateUI(m_editModeToggle->isChecked()); });
 }
 
+bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_F10)
+        {
+            m_image->setDebugView(true);
+            return true;
+        }
+    }
+    else if (event->type() == QEvent::KeyRelease)
+    {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_F10)
+        {
+            m_image->setDebugView(false);
+            return true;
+        }
+    }
+    return QWidget::eventFilter(obj, event);
+}
+
+void MainWindow::onExportToPdf()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "Save PDF", "", "PDF Files (*.pdf)");
+    if (fileName.isEmpty())
+        return;
+
+    QPdfWriter writer(fileName);
+    writer.setResolution(300);
+    writer.setPageSize(QPageSize(QPageSize::A4));
+    writer.setPageMargins(QMarginsF(30, 30, 30, 30));
+
+    QPainter painter(&writer);
+
+    vector<vector<CellData>> grid = m_grid->getBoard().toCellDataMatrix();
+    int side = qMin(writer.width(), writer.height()) * 0.8;
+    int cellSize = side / 9;
+    int offsetX = (writer.width() - side) / 2;
+    int offsetY = (writer.height() - side) / 2;
+    int thinPenWidth = qMax(1, cellSize / 30);
+    int thickPenWidth = qMax(2, cellSize / 15);
+    for (int i = 0; i <= 9; i++)
+    {
+        int currentWidth = (i % 3 == 0) ? thickPenWidth : thinPenWidth;
+        painter.setPen(QPen(Qt::black, currentWidth, Qt::SolidLine, Qt::FlatCap));
+
+        painter.drawLine(offsetX + i * cellSize, offsetY, offsetX + i * cellSize, offsetY + side);
+        painter.drawLine(offsetX, offsetY + i * cellSize, offsetX + side, offsetY + i * cellSize);
+    }
+
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            if (grid[i][j].digit != 0)
+            {
+                painter.setFont(QFont("Arial", 20, grid[i][j].isGiven ? QFont::Bold : QFont::Normal));
+                painter.setPen(grid[i][j].isGiven ? Qt::black : QColor(0, 102, 204));
+                QRect rect(offsetX + j * cellSize, offsetY + i * cellSize, cellSize, cellSize);
+                painter.drawText(rect, Qt::AlignCenter, QString::number(grid[i][j].digit));
+            }
+        }
+    }
+}
+
+void MainWindow::onPeek()
+{
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    m_grid->onShowSolution();
+    QApplication::restoreOverrideCursor();
+}
 void MainWindow::onLoadImage()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
@@ -316,41 +407,55 @@ void MainWindow::onGenerate()
     QApplication::restoreOverrideCursor();
 }
 
+void MainWindow::onLockToggled(bool locked)
+{
+    updateUI(m_editModeToggle->isChecked());
+    m_grid->onSolutionLocked(locked);
+}
+
 void MainWindow::onEditModeToggled(bool checked)
 {
     m_editModeValueLbl->setText(checked ? "Edit clues" : "Solve");
     m_grid->onEditModeChanged(checked);
+    m_lockToggle->setChecked(checked && m_lockToggle->isChecked());
     updateUI(checked);
 }
 
-void MainWindow::updateUI(bool checked)
+void MainWindow::updateSolutionCount(int current, int total)
 {
-    m_leftBrowseBtn->setEnabled(checked);
-    m_rightBrowseBtn->setEnabled(checked);
-    m_generateBtn->setEnabled(checked);
-    m_randomBtn->setEnabled(checked);
-    m_solCountLbl->setEnabled(checked);
-    m_lockToggle->setEnabled(checked);
+    if (total == 0)
+    {
+        m_solIndexLabel->setText("0 / 0");
+    }
+    else
+    {
+        m_solIndexLabel->setText(QString("%1 / %2").arg(current).arg(total));
+    }
+}
+
+void MainWindow::updateUI(bool editMode)
+{
+    bool lockActive = m_lockToggle->isChecked();
+    m_leftBrowseBtn->setEnabled(editMode && lockActive);
+    m_rightBrowseBtn->setEnabled(editMode && lockActive);
+
+    m_randomBtn->setEnabled(editMode);
+    m_lockToggle->setEnabled(editMode);
+
+    if ((!lockActive && editMode) || !editMode)
+    {
+        m_peekBtn->setText("Peek");
+    }
+    else
+    {
+        m_peekBtn->setText("Reset");
+    }
 }
 
 void MainWindow::updateUndoRedoButtons(bool canUndo, bool canRedo)
 {
     m_undoBtn->setEnabled(canUndo);
     m_redoBtn->setEnabled(canRedo);
-}
-
-void MainWindow::updateCountLabel(int count, int maxCount)
-{
-    QString str;
-    if (count >= maxCount)
-    {
-        QTextStream(&str) << "Solution count: " << maxCount << "+";
-    }
-    else
-    {
-        QTextStream(&str) << "Solution count: " << count;
-    }
-    m_solCountLbl->setText(str);
 }
 
 void MainWindow::onSaveRequested()

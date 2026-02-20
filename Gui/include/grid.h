@@ -69,13 +69,15 @@ class Grid : public QWidget {
     History m_history;
     int m_removedCount;
     bool m_solLocked;
-    int m_solIndex;
+    // int m_solIndex;
 
     void enterDigit(int digit, EMarkType type);
     void deleteCell();
     void changeCell(int digit, EMarkType type, bool isGiven);
     CellData handleNumberInput(int x, int y, int digit, EMarkType inputType);
     void reloadStyle();
+    void resetSolutions();
+    void peekSingleSolution();
 
   protected:
     void keyPressEvent(QKeyEvent* event);

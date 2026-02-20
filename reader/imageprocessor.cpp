@@ -1,6 +1,6 @@
-#include <iostream>
-#include <algorithm>
 #include "imageprocessor.h"
+#include <algorithm>
+#include <iostream>
 
 cv::Mat ImageProcessor::getSudokuImage()
 {
@@ -12,7 +12,7 @@ cv::Mat ImageProcessor::getSudokuImage()
     return deskewedSudoku;
 }
 
-cv::Mat ImageProcessor::makeThresholdedImageForContour(const cv::Mat &img)
+cv::Mat ImageProcessor::makeThresholdedImageForContour(const cv::Mat& img)
 {
     cv::Mat gray, thresh, blurred;
     cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
@@ -34,7 +34,7 @@ cv::Mat ImageProcessor::cropSquare(cv::Mat thresh)
     double largestArea = 0.0;
     double minArea = 5000.0;
 
-    for (const auto &cnt : contours)
+    for (const auto& cnt : contours)
     {
         double epsilon = 0.02 * cv::arcLength(cnt, true);
         std::vector<cv::Point> approx;
@@ -58,10 +58,6 @@ cv::Mat ImageProcessor::cropSquare(cv::Mat thresh)
         cv::Mat rect = image.clone();
         cv::rectangle(rect, bestSquareRect, cv::Scalar(0, 255, 0), 2);
         cv::Mat cropped = image(bestSquareRect).clone();
-
-        // cv::imshow("Cropped", cropped);
-        // cv::waitKey(0);
-
         return cropped;
     }
     else
@@ -71,7 +67,7 @@ cv::Mat ImageProcessor::cropSquare(cv::Mat thresh)
     }
 };
 
-cv::Mat ImageProcessor::deskewImage(const cv::Mat &cropped)
+cv::Mat ImageProcessor::deskewImage(const cv::Mat& cropped)
 {
     cv::Mat thresh;
     thresh = makeThresholdedImageForContour(cropped);
@@ -83,7 +79,7 @@ cv::Mat ImageProcessor::deskewImage(const cv::Mat &cropped)
     double maxArea = 0.0;
 
     // find the largest square in the image
-    for (const auto &curve : contours)
+    for (const auto& curve : contours)
     {
         double area = cv::contourArea(curve);
         if (area > maxArea)
@@ -149,7 +145,7 @@ cv::Mat ImageProcessor::deskewImage(const cv::Mat &cropped)
 
     return deskewedImage;
 }
-cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
+cv::Mat ImageProcessor::getCellImage(const cv::Mat& img, int x, int y)
 {
     int singleCellSize = img.rows / 9;
     int y_start_correction = 0;
@@ -161,18 +157,21 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
                            singleCellSize - 2 * margin))
                        .clone();
     cv::Mat thresh, blurred;
-    cv::GaussianBlur(cell, blurred, cv::Size(3, 3), 0);
 
+    cv::GaussianBlur(cell, blurred, cv::Size(3, 3), 0);
     cv::adaptiveThreshold(blurred, thresh, 255,
                           cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY,
                           15,
                           -1);
-    // cv::dilate(thresh, thresh, dilateKernel, cv::Point(-1, -1), 1);
 
-    cv::Mat erodeKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4, 4));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::morphologyEx(thresh, thresh, cv::MORPH_OPEN, kernel);
+    cv::morphologyEx(thresh, thresh, cv::MORPH_CLOSE, kernel);
+
+    cv::Mat erodeKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2)); // Pienempi
     cv::erode(thresh, thresh, erodeKernel, cv::Point(-1, -1), 1);
-    cv::Mat dilateKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
-    cv::dilate(thresh, thresh, dilateKernel, cv::Point(-1, -1), 4);
+    cv::Mat dilateKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
+    cv::dilate(thresh, thresh, dilateKernel, cv::Point(-1, -1), 1); // Vain 1 iterointi!
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -180,7 +179,7 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
 
     double maxArea = 0.0;
 
-    for (const auto &cnt : contours)
+    for (const auto& cnt : contours)
     {
         double area = cv::contourArea(cnt);
         if (area > maxArea && area > (thresh.cols * thresh.rows) * 0.05)
@@ -212,7 +211,6 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
                            cv::Scalar(0));
         int DESIRED_SIZE = 100;
 
-
         cv::Mat resizedNumber;
         double aspectRatio = (double)croppedNumber.cols / croppedNumber.rows;
         int newWidth, newHeight;
@@ -235,20 +233,30 @@ cv::Mat ImageProcessor::getCellImage(const cv::Mat &img, int x, int y)
         int y_offset = (DESIRED_SIZE - newHeight) / 2;
 
         resizedNumber.copyTo(finalCell(cv::Rect(x_offset, y_offset, newWidth, newHeight)));
+        std::vector<std::vector<cv::Point>> contours;
+
+        cv::findContours(finalCell, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+
+        for (const auto& contour : contours)
+        {
+            double area = cv::contourArea(contour);
+            // Jos alue on pienempi kuin esim. 10-20 pikseliä, se on kohinaa
+            if (area < 100)
+            {
+                cv::drawContours(finalCell, std::vector<std::vector<cv::Point>>{contour}, -1, cv::Scalar(0), -1);
+            }
+        }
 
         return finalCell;
     }
     else
     {
         cv::Mat m = cv::Mat::ones(50, 50, thresh.type());
-        // cv::imshow("kolo", m);
-        // cv::waitKey(0);
-
         return cv::Mat::ones(50, 50, thresh.type());
     }
 }
 
-cv::Mat ImageProcessor::getProcessedSudokuImage(const cv::Mat &deskewedOriginal)
+cv::Mat ImageProcessor::getProcessedSudokuImage(const cv::Mat& deskewedOriginal)
 {
     int singleCellSize = deskewedOriginal.rows / 9;
 
@@ -262,6 +270,7 @@ cv::Mat ImageProcessor::getProcessedSudokuImage(const cv::Mat &deskewedOriginal)
             cv::Mat cell = getCellImage(deskewedOriginal, x, y);
 
             cv::Mat resizedCell;
+            cv::bitwise_not(cell, cell);
             cv::resize(cell, resizedCell, cv::Size(singleCellSize, singleCellSize));
 
             if (x == 0)

@@ -44,29 +44,55 @@ std::pair <reader::SudokuGrid, cv::Mat> SudokuReader::getSudokuCells(const cv::M
     reader::SudokuGrid grid(9, std::vector<int>(9, 0));
     cv::Mat cell;
 
+    // for (int y = 0; y < 9; y++)
+    // {
+    //     for (int x = 0; x < 9; x++)
+    //     {
+    //         tess->Clear();
+    //         cell = processor->getCellImage(processedImg, x, y);
+    //         tess->SetImage(cell.data, cell.cols, cell.rows, cell.channels(), cell.step1());
+    //         tess->Recognize(0);
+    //         const char* outText = tess->GetUTF8Text();
+    //         float confidence = tess->MeanTextConf();
+    //         if (confidence < 10)
+    //         {
+    //             grid[y][x] = 0;
+    //         }
+    //         else
+    //         {
+    //             // std::cout << "Kuva " << y << "," << x << ": Tunnistettu teksti: " << outText;
+    //             // std::cout << "Konfidenssi: " << confidence << "%" << std::endl;
+    //             grid[y][x] = outText[0] - '0';
+    //         }
+    //         delete[] outText;
+    //     }
+
     for (int y = 0; y < 9; y++)
     {
         for (int x = 0; x < 9; x++)
         {
-            tess->Clear();
             cell = processor->getCellImage(processedImg, x, y);
+            cv::bitwise_not(cell, cell);
+
             tess->SetImage(cell.data, cell.cols, cell.rows, cell.channels(), cell.step1());
             tess->Recognize(0);
-            const char* outText = tess->GetUTF8Text();
-            float confidence = tess->MeanTextConf();
-            if (confidence < 80)
+
+            char* outText = tess->GetUTF8Text();
+            int confidence = tess->MeanTextConf();
+            // std::cout << "Number: " << outText << " Conf: " << confidence << std::endl;
+
+            if (outText && outText[0] >= '1' && outText[0] <= '9' && confidence > 65)
             {
-                grid[y][x] = 0;
+                grid[y][x] = outText[0] - '0';
             }
             else
             {
-                // std::cout << "Kuva " << y << "," << x << ": Tunnistettu teksti: " << outText;
-                // std::cout << "Konfidenssi: " << confidence << "%" << std::endl;
-                grid[y][x] = outText[0] - '0';
+                grid[y][x] = 0;
             }
             delete[] outText;
         }
     }
+
     cv::Mat fullProcessedImage = processor->getProcessedSudokuImage(processedImg);
     cv::imwrite("debug_final.png", fullProcessedImage);
 
